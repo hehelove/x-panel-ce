@@ -1,5 +1,9 @@
 [English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) |  [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md)
 
+> **About this fork:** This is `hehelove/x-panel-ce`, a **fully open-source community fork (CE)** of upstream [`xeefei/X-Panel`](https://github.com/xeefei/X-Panel). It has **no commercial license**, **no Pro tier**, and **no donation wallets**. See [`NOTICE.md`](./NOTICE.md). License remains [GPL-3.0](./LICENSE).
+
+---
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/X-Panel.png">
@@ -7,10 +11,10 @@
   </picture>
 </p>
 
-[![](https://img.shields.io/github/v/release/xeefei/x-panel.svg?style=for-the-badge)](https://github.com/xeefei/x-panel/releases)
-[![](https://img.shields.io/github/actions/workflow/status/xeefei/x-panel/release.yml.svg?style=for-the-badge)](https://github.com/xeefei/x-panel/actions)
-[![GO Version](https://img.shields.io/github/go-mod/go-version/xeefei/x-panel.svg?style=for-the-badge)](#)
-[![Downloads](https://img.shields.io/github/downloads/xeefei/x-panel/total.svg?style=for-the-badge)](https://github.com/xeefei/x-panel/releases/latest)
+[![](https://img.shields.io/github/v/release/hehelove/x-panel-ce.svg?style=for-the-badge)](https://github.com/hehelove/x-panel-ce/releases)
+[![](https://img.shields.io/github/actions/workflow/status/hehelove/x-panel-ce/release.yml.svg?style=for-the-badge)](https://github.com/hehelove/x-panel-ce/actions)
+[![GO Version](https://img.shields.io/github/go-mod/go-version/hehelove/x-panel-ce.svg?style=for-the-badge)](#)
+[![Downloads](https://img.shields.io/github/downloads/hehelove/x-panel-ce/total.svg?style=for-the-badge)](https://github.com/hehelove/x-panel-ce/releases/latest)
 [![License](https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true&style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 **3X-UI** — продвинутая панель управления с открытым исходным кодом на основе веб-интерфейса, разработанная для управления сервером Xray-core. Предоставляет удобный интерфейс для настройки и мониторинга различных VPN и прокси-протоколов.
@@ -23,10 +27,10 @@
 ## Быстрый старт
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh)
 ```
 
-Полную документацию смотрите в [вики проекта](https://github.com/xeefei/x-panel/wiki).
+Полную документацию смотрите в [вики проекта](https://github.com/hehelove/x-panel-ce/wiki).
 
 ## Особая благодарность
 
@@ -36,21 +40,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/master/install.
 
 - [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules) (Лицензия: **GPL-3.0**): _Улучшенные правила маршрутизации для v2ray/xray и v2ray/xray-clients со встроенными иранскими доменами и фокусом на безопасность и блокировку рекламы._
 - [Russia v2ray rules](https://github.com/runetfreedom/russia-v2ray-rules-dat) (Лицензия: **GPL-3.0**): _Этот репозиторий содержит автоматически обновляемые правила маршрутизации V2Ray на основе данных о заблокированных доменах и адресах в России._
-
-## Поддержка проекта
-
-**Если этот проект полезен для вас, вы можете поставить ему**:star2:
-
-<p align="left">
-  <a href="https://buymeacoffee.com/mhsanaei" target="_blank">
-    <img src="./media/buymeacoffe.png" alt="Image">
-  </a>
-</p>
-
-- USDT (TRC20): `TXncxkvhkDWGts487Pjqq1qT9JmwRUz8CC`
-- POL (polygon): `0x41C9548675D044c6Bfb425786C765bc37427256A`
-- LTC (Litecoin): `ltc1q2ach7x6d2zq0n4l0t4zl7d7xe2s6fs7a3vspwv`
-
 ## Звезды с течением времени
 
-[![Stargazers over time](https://starchart.cc/xeefei/x-panel.svg?variant=adaptive)](https://starchart.cc/xeefei/x-panel) 
+[![Stargazers over time](https://starchart.cc/hehelove/x-panel-ce.svg?variant=adaptive)](https://starchart.cc/hehelove/x-panel-ce) 

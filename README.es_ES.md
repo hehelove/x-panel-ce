@@ -1,35 +1,27 @@
 [English](/README.md) | [Chinese](/README.zh.md) | [Español](/README.es_ES.md)
 
+> **About this fork:** This is `hehelove/x-panel-ce`, a **fully open-source community fork (CE)** of upstream [`xeefei/X-Panel`](https://github.com/xeefei/X-Panel). It has **no commercial license**, **no Pro tier**, and **no donation wallets**. See [`NOTICE.md`](./NOTICE.md). License remains [GPL-3.0](./LICENSE).
+
+---
+
 <p align="center"><a href="#"><img src="./media/X-Panel.png" alt="Image"></a></p>
 
 **Un Panel Web Avanzado • Construido sobre Xray Core**
 
-[![](https://img.shields.io/github/v/release/xeefei/x-panel.svg)](https://github.com/xeefei/x-panel/releases)
-[![](https://img.shields.io/github/actions/workflow/status/xeefei/x-panel/release.yml.svg)](#)
-[![GO Version](https://img.shields.io/github/go-mod/go-version/xeefei/x-panel.svg)](#)
-[![Downloads](https://img.shields.io/github/downloads/xeefei/x-panel/total.svg)](#)
+[![](https://img.shields.io/github/v/release/hehelove/x-panel-ce.svg)](https://github.com/hehelove/x-panel-ce/releases)
+[![](https://img.shields.io/github/actions/workflow/status/hehelove/x-panel-ce/release.yml.svg)](#)
+[![GO Version](https://img.shields.io/github/go-mod/go-version/hehelove/x-panel-ce.svg)](#)
+[![Downloads](https://img.shields.io/github/downloads/hehelove/x-panel-ce/total.svg)](#)
 [![License](https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 > **Descargo de responsabilidad:** Este proyecto es solo para aprendizaje personal y comunicación, por favor no lo uses con fines ilegales, por favor no lo uses en un entorno de producción
 
 **Si este proyecto te es útil, podrías considerar darle una**:star2:
 
-<p align="left">
-  <a href="https://buymeacoffee.com/xeefeiz" target="_blank">
-    <img src="./media/buymeacoffe.png" alt="Image">
-  </a>
-</p>
-
-- Sponsorship Address (USDT):
-- TRC20 ---->>> `TYQEmQp1P65u9bG7KPehgJdvuokfb72YkZ`
-- Polygon ---->>> `0xd20eBE429c2398793178e015B2ca1Dc42601f3Eb`
-- Solana ---->>> `7qVEZuV98QTDN5qUmsFwvqTSvkYpmLtNf8o1sh1mppwR`
-- BSC/BEP20 ---->>> `0xd20eBE429c2398793178e015B2ca1Dc42601f3Eb`
-
 ## Instalar y Actualizar
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh)
 ```
 
 ## Instalar una Versión Personalizada
@@ -37,7 +29,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/master/install.
 Para instalar la versión deseada, agrega la versión al final del comando de instalación. Por ejemplo, ver `v2.4.1`:
 
 ```
-bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/master/install.sh) v2.4.1
+bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh) v2.4.1
 ```
 
 ## Certificado SSL
@@ -89,7 +81,7 @@ case "${ARCH}" in
 esac
 
 
-wget https://github.com/xeefei/x-panel/releases/latest/download/x-ui-linux-${XUI_ARCH}.tar.gz
+wget https://github.com/hehelove/x-panel-ce/releases/latest/download/x-ui-linux-${XUI_ARCH}.tar.gz
 ```
 
 2. Una vez que se haya descargado el paquete comprimido, ejecuta los siguientes comandos para instalar o actualizar x-ui:
@@ -136,7 +128,7 @@ systemctl restart x-ui
 2. Clona el Repositorio del Proyecto:
 
    ```sh
-   git clone https://github.com/xeefei/x-panel.git
+   git clone https://github.com/hehelove/x-panel-ce.git
    cd 3x-ui
    ```
 
@@ -156,7 +148,7 @@ systemctl restart x-ui
       --network=host \
       --restart=unless-stopped \
       --name 3x-ui \
-      ghcr.io/xeefei/x-panel:latest
+      ghcr.io/hehelove/x-panel-ce:latest
    ```
 
 actualizar a la última versión
@@ -492,11 +484,9 @@ XUI_BIN_FOLDER="bin" XUI_DB_FOLDER="/etc/x-ui" go build main.go
 
 ## Reconocimientos
 
-赞助地址（USDT/TRC20）：TYQEmQp1P65u9bG7KPehgJdvuokfb72YkZ
-
 - [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules) (Licencia: **GPL-3.0**): _Reglas de enrutamiento mejoradas de v2ray/xray y v2ray/xray-clients con dominios iraníes integrados y un enfoque en seguridad y bloqueo de anuncios._
 - [Vietnam Adblock rules](https://github.com/vuong2023/vn-v2ray-rules) (License: **GPL-3.0**): _Un dominio alojado en Vietnam y una lista de bloqueo con la máxima eficiencia para vietnamitas._
 
 ## Estrellas a lo largo del tiempo
 
-[![Stargazers over time](https://starchart.cc/xeefei/x-panel.svg)](https://starchart.cc/xeefei/x-panel)
+[![Stargazers over time](https://starchart.cc/hehelove/x-panel-ce.svg)](https://starchart.cc/hehelove/x-panel-ce)
