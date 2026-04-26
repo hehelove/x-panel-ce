@@ -47,15 +47,19 @@
 
 ### 3.1 Stage 2 — 安装脚本 CE 化
 
+> **菜单宿主已确认**：路线图原文所说的"第 26/27/28/29 选项"都在
+> `x-ui.sh:show_menu`（L2060-2192，当前菜单为 0-25）。
+> Stage 2 的菜单扩展工作集中在 `x-ui.sh`，`install.sh` 仅做头部注释收尾。
+
 | # | 标题摘要 | 上游源码坐标 | 依赖评估 | CE 策略 | 备注 |
 |---|---|---|---|---|---|
-| 5 | 安装脚本界面增加 CE 明确标识 | `install.sh`（脚本头注释、`install_x_panel_ce` 函数 banner） | 无 | OSS 增强 | 顺手清掉脚本第 4 行残余注释 `(付费/免费二合一)` |
-| 7 | 第 26 选项部署"网页版 SSH 工具" | `install.sh` / `x-ui.sh` 主菜单（待精确定位） | 第三方 webssh 项目（待选型） | OSS 重写 | 倾向选择 [`huashengdun/webssh`](https://github.com/huashengdun/webssh) 等 GPL/MIT 开源实现，systemd unit 化 |
-| 8 | 第 27 选项"线路和 IP 质量检测" | `install.sh` 主菜单 + 新增 `linejc.sh`（仿 `dnsjc.sh`） | 公共测速 API | OSS 重写 | 不接入任何商业测速 API，使用 Cloudflare/Bench.sh 等公共数据源 |
-| 9 | 第 28 选项"地区服务器 DNS 检测" | `dnsjc.sh`（已存在）+ `install.sh` 集成入口 | 无 | OSS 增强 | **Stage 0 残留**：`dnsjc.sh` 第 36 行 banner 仍写 "X-Panel-Pro 面板"，Stage 2 顺手 CE 化 |
-| 21 | 证书申请"备用方式" | `install.sh` 第 18 选项相关的 acme 流程（待精确定位） | acme.sh / certbot | OSS 重写 | 实现常规 standalone + DNS-01 备用，不依赖任何商业 DNS API |
-| 22 | 自定义证书路径 | 同上 | 无 | OSS 重写 | 仅做用户输入校验 + 软链；无网络请求 |
-| 29 | 第 29 选项"深度调优脚本"（BBR+FQ / TFO / 缓冲区 / 队列） | `install.sh` 主菜单（新建函数） | 无 | OSS 重写 | sysctl 写入要做 dry-run 预览 + 备份 + 一键回滚 |
+| 5 | 安装脚本界面增加 CE 明确标识 | `install.sh` 头注释 + `x-ui.sh:show_menu` banner | 无 | OSS 增强 | `install.sh` 第 4-5 行残余注释 `(付费/免费二合一)` 在 Stage 2.1 已清理；`x-ui.sh:show_menu` 头部 banner 已在 Stage 0 改为"x-panel-ce"。 |
+| 7 | 第 26 选项部署"网页版 SSH 工具" | `x-ui.sh:show_menu` 新增 case 26 + 新函数 `webssh_install` | 第三方：[huashengdun/webssh](https://github.com/huashengdun/webssh)（**已选定**，MIT，Python tornado） | OSS 重写 | 部署方式：apt 装 python3-pip → `pip install webssh` → systemd unit 化（监听 127.0.0.1，由 nginx/反代或 ssh tunnel 暴露）；不开放公网默认端口。 |
+| 8 | 第 27 选项"线路和 IP 质量检测" | `x-ui.sh:show_menu` 新增 case 27 + 新脚本 `linejc.sh`（顶层，仿 `dnsjc.sh`） | 公共数据源 | OSS 重写 | 数据源：Cloudflare trace、ipinfo.io 公开端点、本地 mtr/traceroute；**不接入任何商业测速 API**。 |
+| 9 | 第 28 选项"地区服务器 DNS 检测" | `dnsjc.sh`（已存在）+ `x-ui.sh:show_menu` 新增 case 28 接入 | 无 | OSS 增强 | Stage 0 残留 banner "X-Panel-Pro 面板" 在 Stage 2.1 已修复。 |
+| 21 | 证书申请"备用方式" | `x-ui.sh:ssl_cert_issue_main` 子菜单内增项 | acme.sh / certbot | OSS 重写 | 实现：HTTP-01 standalone（默认）+ DNS-01 manual 备用（用户手工填 TXT 后回车）；不依赖商业 DNS API。 |
+| 22 | 自定义证书路径 | `x-ui.sh:ssl_cert_issue_main` 子菜单内增项 | 无 | OSS 重写 | 用户输入 fullchain/key 路径 → 校验存在性 + 权限 → 软链到 `/etc/x-ui/cert/`；无网络请求。 |
+| 29 | 第 29 选项"深度调优脚本"（BBR+FQ / TFO / 缓冲区 / 队列） | `x-ui.sh:show_menu` 新增 case 29 + 新函数 `tuning_kernel` | 无 | OSS 重写 | **应用策略已锁定**：dry-run 预览 → 备份 `/etc/sysctl.conf` 到 `/etc/sysctl.conf.bak.<ts>` → 用户确认（默认 N）→ 写入 `/etc/sysctl.d/99-x-panel-ce-tuning.conf`，提供回滚菜单项。 |
 
 ### 3.2 Stage 3 — TG Bot 通知与状态
 

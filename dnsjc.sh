@@ -33,7 +33,7 @@ else
   RESET=""
 fi
 echo ""
-printf "%b\n\n" "${RED}〔X-Panel-Pro 面板〕专属 “服务器 DNS 检测”${RESET}"
+printf "%b\n\n" "${RED}〔x-panel-ce〕服务器 DNS 检测（Community Edition, GPL-3.0）${RESET}"
 
 # extract valid IPs (IPv4 strict / IPv6 loose)
 extract_ips() {

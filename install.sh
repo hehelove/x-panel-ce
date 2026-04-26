@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # ==========================================================
-# X-Panel 统一安装脚本 (付费/免费二合一)
-# 作者: X-Panel
+# x-panel-ce 安装脚本 (Community Edition, GPL-3.0 开源 fork)
+# 上游：https://github.com/xeefei/X-Panel
+# 本仓库：https://github.com/hehelove/x-panel-ce
+# 详细差异请参阅 NOTICE.md 与 docs/ROADMAP.md
 # ==========================================================
 
 red='\033[0;31m'
