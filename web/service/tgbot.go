@@ -229,6 +229,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 			{Command: "oneclick", Description: "🚀 一键配置节点 (有可选项)"},
 			{Command: "subconverter", Description: "🔄 检测或安装订阅转换"},
 			{Command: "restartx", Description: "♻️ 重启〔X-Panel 面板〕"},
+			{Command: "checkupdate", Description: "🆕 检查 x-panel-ce 是否有新版本"},
 		},
 	})
 	if err != nil {
@@ -603,7 +604,16 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 			t.SendMsgToTgbot(chatId, "🤔 您“现在的操作”是要确定进行，\n\n重启〔X-Panel 面板〕服务吗？\n\n这也会同时重启 Xray Core，\n\n会使面板在短时间内无法访问。", confirmKeyboard)
 		} else {
 			handleUnknownCommand()
-		}	
+		}
+
+	// CE 路线图 #2：拉取 hehelove/x-panel-ce 最新 release，对比本地版本并发送 release notes。
+	case "checkupdate":
+		onlyMessage = true
+		if isAdmin {
+			t.checkCEUpdate(chatId)
+		} else {
+			handleUnknownCommand()
+		}
 	default:
 		handleUnknownCommand()
 	}
@@ -2295,6 +2305,94 @@ func (t *Tgbot) SendMsgToTgbotAdmins(msg string, replyMarkup ...telego.ReplyMark
 			t.SendMsgToTgbot(adminId, msg)
 		}
 	}
+}
+
+// CE 路线图 #2：检查 hehelove/x-panel-ce 是否发布新版本，并把 release notes
+// 摘要发回当前 chat。仅访问 GitHub 公共 Releases API，不携带任何用户标识，
+// 不上传部署信息——与 Stage 0.1 移除的"中央上报"严格区分。
+type ceReleaseInfo struct {
+	TagName     string `json:"tag_name"`
+	Name        string `json:"name"`
+	Body        string `json:"body"`
+	PublishedAt string `json:"published_at"`
+	HtmlUrl     string `json:"html_url"`
+}
+
+func (t *Tgbot) checkCEUpdate(chatId int64) {
+	const apiURL = "https://api.github.com/repos/hehelove/x-panel-ce/releases/latest"
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		t.SendMsgToTgbot(chatId, "❌ 版本检查失败：构造请求出错。\n\n详情："+err.Error())
+		return
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "x-panel-ce/checkupdate")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.SendMsgToTgbot(chatId, "❌ 版本检查失败：无法访问 GitHub API。\n\n详情："+err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.SendMsgToTgbot(chatId, fmt.Sprintf("❌ 版本检查失败：GitHub API 返回 HTTP %d。", resp.StatusCode))
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.SendMsgToTgbot(chatId, "❌ 版本检查失败：读取响应失败。\n\n详情："+err.Error())
+		return
+	}
+
+	var info ceReleaseInfo
+	if err := json.Unmarshal(body, &info); err != nil {
+		t.SendMsgToTgbot(chatId, "❌ 版本检查失败：解析 GitHub 响应 JSON 失败。\n\n详情："+err.Error())
+		return
+	}
+
+	if info.TagName == "" {
+		t.SendMsgToTgbot(chatId, "❌ 版本检查失败：GitHub Release 信息为空（仓库可能尚未发布 release）。")
+		return
+	}
+
+	localVer := strings.TrimPrefix(config.GetVersion(), "v")
+	remoteVer := strings.TrimPrefix(info.TagName, "v")
+
+	status := "🆕 发现新版本！"
+	if localVer == remoteVer {
+		status = "✅ 当前已是最新版本"
+	}
+
+	notes := info.Body
+	const maxNotes = 1500
+	if len(notes) > maxNotes {
+		notes = notes[:maxNotes] + "\n\n…（已截断，详见 GitHub Release 页面）"
+	}
+	if strings.TrimSpace(notes) == "" {
+		notes = "（本次 release 未提供更新说明）"
+	}
+
+	releaseName := info.Name
+	if releaseName == "" {
+		releaseName = info.TagName
+	}
+
+	msg := fmt.Sprintf(
+		"%s\n\n"+
+			"📦 当前版本：`%s`\n"+
+			"🚀 最新版本：`%s`\n"+
+			"📝 名称：%s\n"+
+			"🕒 发布时间：%s\n"+
+			"🔗 详情：%s\n\n"+
+			"—— Release Notes ——\n%s",
+		status, localVer, remoteVer, releaseName, info.PublishedAt, info.HtmlUrl, notes,
+	)
+
+	t.SendMsgToTgbot(chatId, msg)
 }
 
 // 〔中文注释〕: 全新重构的 SendReport 函数，只发送四条趣味性内容。
