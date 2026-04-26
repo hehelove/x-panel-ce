@@ -694,7 +694,7 @@
 "report" = "🕰 定時報告：{{ .RunTime }}\r\n"
 "datetime" = "⏰ 日期時間：{{ .DateTime }}\r\n"
 "hostname" = "💻 主機名稱：{{ .Hostname }}\r\n"
-"version" = "🚀 X-Panel 版本：v{{ .Version }}\r\n"
+"version" = "🚀 x-panel-ce 版本：v{{ .Version }} (CE, GPL-3.0)\r\n"
 "xrayVersion" = "📡 Xray Core 版本：v{{ .XrayVersion }}\r\n"
 "ipv6" = "🌐 IPv6：{{ .IPv6 }}\r\n"
 "ipv4" = "🌐 IPv4：{{ .IPv4 }}\r\n"

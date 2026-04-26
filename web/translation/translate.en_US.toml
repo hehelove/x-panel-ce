@@ -687,7 +687,7 @@
 "report" = "🕰 Scheduled Reports: {{ .RunTime }}\r\n"
 "datetime" = "⏰ Date&Time: {{ .DateTime }}\r\n"
 "hostname" = "💻 Host: {{ .Hostname }}\r\n"
-"version" = "🚀 X-Panel Version: v{{ .Version }}\r\n"
+"version" = "🚀 x-panel-ce Version: v{{ .Version }} (CE, GPL-3.0)\r\n"
 "xrayVersion" = "📡 Xray Core Version: v{{ .XrayVersion }}\r\n"
 "ipv6" = "🌐 IPv6: {{ .IPv6 }}\r\n"
 "ipv4" = "🌐 IPv4: {{ .IPv4 }}\r\n"
