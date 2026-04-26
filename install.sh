@@ -403,7 +403,7 @@ install_x_panel_ce() {
         ipv4=$(curl -s4m8 ip.p3terx.com -k | sed -n 1p)
         ipv6=$(curl -s6m8 ip.p3terx.com -k | sed -n 1p)
         systemctl start warp-go >/dev/null 2>&1
-        wg-quick up wgcf >/dev/null 2A>&1
+        wg-quick up wgcf >/dev/null 2>&1
 
         echo ""
         echo -e "------->>>>${green}x-panel-ce ${last_version}${plain}<<<<安装成功，正在启动..."
