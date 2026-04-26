@@ -702,36 +702,61 @@
         </transition>
       </a-spin>
     <a-modal
-      :title="`{{ i18n "pages.inbounds.oneClick.title" }}`"
+      :title="`{{ i18n "pages.inbounds.ceQuickDeploy.title" }}`"
       :visible="oneClickModalVisible"
       :cancel-text="`{{ i18n "cancel" }}`"
+      :ok-text="`{{ i18n "pages.inbounds.ceQuickDeploy.submit" }}`"
       :class="themeSwitcher.currentTheme"
       @cancel="handleOneClickCancel"
-      :footer="null"
+      @ok="ceSubmitQuickDeployReality"
+      :ok-button-props="{ props: { loading: ceQuickDeploy.submitting } }"
    >
       <a-alert
-      message="功能开发中"
-      type="info"
-      show-icon
->
-    <template #description>
-        〔一键配置 / 批量部署〕功能在 x-panel-ce 路线图（#13 / #31）中归属 Stage 4，
-        <br />
-        将以纯本地事务式 VLESS+TCP+Reality+Vision 入站生成的方式开源重写，
-        <br />
-        目前后端 API 尚未实现。
-    </template>
-
-    <template #icon><a-icon type="experiment"></a-icon></template>
-     </a-alert>
-        <div :style="{ marginTop: '20px', textAlign: 'center' }">
-          <p>
-             <a href="https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md" target="_blank">x-panel-ce 路线图（docs/ROADMAP.md）</a>
-          </p>
-          <p>
-             <a href="https://github.com/hehelove/x-panel-ce/issues" target="_blank">在 Issues 跟踪进度或贡献代码</a>
-          </p>
-       </div>
+        type="info"
+        show-icon
+        :message="`{{ i18n "pages.inbounds.ceQuickDeploy.headline" }}`">
+        <template #description>
+          {{ i18n "pages.inbounds.ceQuickDeploy.desc" }}
+        </template>
+      </a-alert>
+      <a-form layout="horizontal" :colon="false" :label-col="{ span: 8 }" :wrapper-col="{ span: 14 }" :style="{ marginTop: '12px' }">
+        <a-form-item label='{{ i18n "pages.inbounds.ceQuickDeploy.count" }}'>
+          <a-input-number v-model.number="ceQuickDeploy.count" :min="1" :max="50" style="width: 100%"></a-input-number>
+        </a-form-item>
+        <a-form-item label='{{ i18n "pages.inbounds.ceQuickDeploy.portStart" }}'>
+          <a-input-number v-model.number="ceQuickDeploy.portStart" :min="1024" :max="65500" style="width: 100%"></a-input-number>
+        </a-form-item>
+        <a-form-item label='{{ i18n "pages.inbounds.ceQuickDeploy.remarkPrefix" }}'>
+          <a-input v-model.trim="ceQuickDeploy.remarkPrefix" placeholder="ce-reality" style="width: 100%"></a-input>
+        </a-form-item>
+        <a-form-item>
+          <template slot="label">
+            <a-tooltip>
+              <template slot="title">
+                <span>{{ i18n "pages.inbounds.realityRandomDestDesc" }}</span>
+              </template>
+              {{ i18n "pages.inbounds.ceQuickDeploy.target" }}
+              <a-icon type="thunderbolt" @click="(() => { const r = RandomUtil.randomRealitySNI(); ceQuickDeploy.target = r.dest; ceQuickDeploy.serverNames = r.sni; })()"></a-icon>
+            </a-tooltip>
+          </template>
+          <a-input v-model.trim="ceQuickDeploy.target" placeholder="www.tesla.com:443" style="width: 100%"></a-input>
+        </a-form-item>
+        <a-form-item label='{{ i18n "pages.inbounds.ceQuickDeploy.serverNames" }}'>
+          <a-input v-model.trim="ceQuickDeploy.serverNames" placeholder="www.tesla.com" style="width: 100%"></a-input>
+        </a-form-item>
+      </a-form>
+      <a-alert v-if="ceQuickDeploy.lastResult" type="success" show-icon :style="{ marginTop: '12px' }"
+        :message="`{{ i18n "pages.inbounds.ceQuickDeploy.successPrefix" }} ` + ceQuickDeploy.lastResult.successCount">
+        <template #description>
+          <div v-if="ceQuickDeploy.lastResult.ports && ceQuickDeploy.lastResult.ports.length">
+            {{ i18n "pages.inbounds.ceQuickDeploy.deployedPorts" }}
+            [[ ceQuickDeploy.lastResult.ports.join(', ') ]]
+          </div>
+        </template>
+      </a-alert>
+      <div :style="{ marginTop: '12px', textAlign: 'center' }">
+        <a href="https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md" target="_blank">{{ i18n "pages.inbounds.ceQuickDeploy.roadmapLink" }}</a>
+      </div>
      </a-modal>
     </a-layout-content>
   </a-layout>
@@ -900,6 +925,16 @@
 			
             // 【中文注释】: 新增数据属性，用于控制“一键配置”模态框的显示状态
             oneClickModalVisible: false,
+            // CE 路线图 #31：批量部署 Reality 表单状态
+            ceQuickDeploy: {
+                count: 10,
+                portStart: 30000,
+                remarkPrefix: 'ce-reality',
+                target: '',
+                serverNames: '',
+                submitting: false,
+                lastResult: null,
+            },
         },
 		
         mounted() {
@@ -1146,6 +1181,36 @@ async openPort(port) {
             handleOneClickCancel() {
                 this.oneClickModalVisible = false;
                 this.inboundLink = '';          // 关闭时清空链接，以便下次重新打开时显示选项
+                this.ceQuickDeploy.lastResult = null;
+            },
+
+            // CE 路线图 #31：批量部署 Reality 提交逻辑。失败由后端补偿删除已建条目，
+            // 前端只需展示 message + 刷新列表；ceQuickDeploy 表单状态保留，便于二次重试。
+            async ceSubmitQuickDeployReality() {
+                if (this.ceQuickDeploy.submitting) {
+                    return;
+                }
+                this.ceQuickDeploy.submitting = true;
+                try {
+                    const payload = {
+                        count: this.ceQuickDeploy.count,
+                        portStart: this.ceQuickDeploy.portStart,
+                        remarkPrefix: this.ceQuickDeploy.remarkPrefix,
+                        target: this.ceQuickDeploy.target,
+                        serverNames: this.ceQuickDeploy.serverNames,
+                    };
+                    const msg = await HttpUtil.postWithModal('/panel/api/inbounds/ce/quickDeployReality', payload);
+                    if (msg.success) {
+                        this.ceQuickDeploy.lastResult = msg.obj || null;
+                        const n = (msg.obj && msg.obj.successCount) || 0;
+                        this.$message.success(`Reality x ${n} {{ i18n "pages.inbounds.ceQuickDeploy.successDeployed" }}`);
+                        this.getDBInbounds();
+                    }
+                } catch (e) {
+                    this.$message.error(e.message || 'failed');
+                } finally {
+                    this.ceQuickDeploy.submitting = false;
+                }
             },
 
             // 〔中文注释〕: 处理“订阅转换”按钮的点击事件 (已更新为完整逻辑)

@@ -45,6 +45,24 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.POST("/onlines", a.onlines)
 	g.POST("/lastOnline", a.lastOnline)
 	g.POST("/updateClientTraffic/:email", a.updateClientTraffic)
+	// CE 路线图 #31：批量部署 N 条 VLESS+TCP+Reality+Vision 入站
+	g.POST("/ce/quickDeployReality", a.ceQuickDeployReality)
+}
+
+// ceQuickDeployReality 批量部署 Reality 入站，全成或全无（补偿删除）。
+// 参数全部可选，未填项使用 service 层默认值；返回创建出的端口/inbound ID 列表。
+func (a *InboundController) ceQuickDeployReality(c *gin.Context) {
+	var req service.CEQuickDeployRealityRequest
+	if err := c.ShouldBind(&req); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	resp, err := a.inboundService.QuickDeployReality(req)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, resp, nil)
 }
 
 func (a *InboundController) getInbounds(c *gin.Context) {
