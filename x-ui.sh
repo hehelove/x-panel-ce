@@ -1580,126 +1580,30 @@ warp_cloudflare() {
     esac
 }
 
-# --------- 【订阅转换】模块 ---------- 
+# --------- 【订阅转换】模块占位（CE 已下线，详见说明） ----------
+# 上游版本调用 xeefei/sublink（仅在私有 Pro 版中维护）+ 自动 Nginx 反向代理 +
+# systemd 服务，整套实现绑定上游商业生态。x-panel-ce 出于以下考量不保留该路径：
+#   1. 不引用上游 xeefei/sublink 私有项目（许可证不明、维护方不公开）；
+#   2. 自动安装会写 /etc/nginx/conf.d/sublink.conf + /etc/systemd/system/sublink.service +
+#      cp acme.sh 证书到 /etc/nginx/ssl/，副作用横跨多个系统目录，无 dry-run/回滚；
+#   3. 默认 admin/123456 弱口令登录入口存在历史性安全风险。
+# 后续若 CE 自行提供订阅转换，将以独立模块 + opt-in + 安全默认 提供，详见 ROADMAP。
 subconverter() {
-echo ""
-echo -e "${green}==============================================="
-echo -e "〔订阅转换〕一键部署"
-echo -e "1. 自动安装/部署 Nginx"
-echo -e "2. 自动调用面板的证书"
-echo -e "3. 自动部署 Sublink 服务"
-echo -e "4. 自动配置 Nginx 反向代理"
-echo -e "5. 可直观在前端页面配置订阅"
-echo -e "作者：〔X-Panel 面板〕专属定制"
-echo -e "===============================================${plain}"
-echo ""
-    local existing_cert=$(/usr/local/x-ui/x-ui setting -getCert true | grep -Eo 'cert: .+' | awk '{print $2}')
-    local existing_key=$(/usr/local/x-ui/x-ui setting -getCert true | grep -Eo 'key: .+' | awk '{print $2}')
-
-    if [[ -n "$existing_cert" && -n "$existing_key" ]]; then
-    echo -e "${green}面板已安装证书采用SSL保护${plain}"
     echo ""
-    domain=$(basename "$(dirname "$existing_cert")")
-    echo -e "${green}------------->>>>接下来进行sublink订阅转换服务的安装  ........${plain}"
-    sleep 3
+    echo -e "${yellow}===============================================${plain}"
+    echo -e "${yellow}〔订阅转换〕功能已在 x-panel-ce 中下线${plain}"
+    echo -e "${yellow}===============================================${plain}"
     echo ""
-else
-    echo -e "${red}警告：未找到证书和密钥，面板不安全！${plain}"
+    echo -e "${plain}原因：上游 xeefei/sublink 仅在私有 Pro 版中维护，CE 不再引用。${plain}"
+    echo -e "${plain}      自动安装会写入 /etc/nginx/、/etc/systemd/system/ 等多个系统目录，${plain}"
+    echo -e "${plain}      且默认 admin/123456 弱口令登录，安全默认不达 CE 标准。${plain}"
     echo ""
-    echo -e "${green}------->>>>且不能安装sublink订阅转换服务<<<<-------${plain}"
+    echo -e "${plain}后续：若 CE 自行提供订阅转换模块，将以独立 OSS 仓库 + opt-in 方式提供。${plain}"
+    echo -e "${plain}      进度详见：${plain}"
+    echo -e "${green}      https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md${plain}"
     echo ""
-    sleep 5
-    exit 1
-fi
-
-# --------- 安装/部署sublink服务 ----------
-# x-panel-ce 注：上游引用的 xeefei/sublink 仅在私有 Pro 版中维护。
-# 本 fork 暂不在此处自动调用第三方安装脚本；订阅转换功能将由 CE 独立模块在路线图中开源化重写。
-
-echo -e "${yellow}[CE] 订阅转换器（sublink）的自动安装已在 x-panel-ce 中移除：${plain}"
-echo -e "${yellow}    不再引用上游 xeefei/sublink 项目。${plain}"
-echo -e "${green}    后续将在本仓库以独立模块的形式重新提供，敬请关注 NOTICE.md / 路线图。${plain}"
-exit 0
-# --- 以下旧逻辑保留作为参考，已不再执行 ---
-# bash <(curl -Ls https://raw.githubusercontent.com/xeefei/sublink/main/install.sh)
-
-
-# --------- 安装 Nginx ----------
-if ! command -v nginx &>/dev/null; then
-    echo -e "${yellow}-------------->>>>>>>>未检测到 Nginx，正在安装...${plain}"
-    apt update && apt install -y nginx
-    systemctl enable nginx
-    systemctl start nginx
-else
-    echo -e "${green}检测到 Nginx 已安装，跳过安装步骤${plain}"
-fi
-
-# --------- 拷贝X-Panel已有证书到 Nginx ----------
-mkdir -p /etc/nginx/ssl
-acme_path="/root/.acme.sh/${domain}_ecc"
-
-cp "${acme_path}/fullchain.cer" "/etc/nginx/ssl/${domain}.cer"
-cp "${acme_path}/${domain}.key" "/etc/nginx/ssl/${domain}.key"
-
-
-# --------- 配置 Nginx 反向代理 ----------
-NGINX_CONF="/etc/nginx/conf.d/sublink.conf"
-cat > $NGINX_CONF <<EOF
-server {
-    listen 15268 ssl http2;
-    server_name ${domain};
-
-    # 证书路径（从 acme.sh 复制到 /etc/nginx/ssl/ 下）
-    ssl_certificate     /etc/nginx/ssl/${domain}.cer;
-    ssl_certificate_key /etc/nginx/ssl/${domain}.key;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    }
-}
-EOF
-
-# 重载 nginx，让新证书生效
-sleep 1
-systemctl reload nginx
-sleep 2
-
-# --------- 使用 sed 替换 ExecStart 行，添加启动参数 ----------
-sudo sed -i "/^ExecStart=/ s|$| run --port 8000|" "/etc/systemd/system/sublink.service"
-# 重新加载 systemd 守护进程
-sudo systemctl daemon-reload
-# 重启 sublink 服务
-sudo systemctl restart sublink
-
-
-# --------- 开放防火墙端口 ----------
-echo ""
-echo -e "${yellow}请务必手动放行${plain}${red} 8000 和 15268 ${yellow}端口！！${plain}"
-echo ""
-
-# --------- 完成提示 ----------
-echo ""
-echo -e "${green}【订阅转换模块】安装完成！！！${plain}"
-echo ""
-echo -e "${green}登录用户名：admin，密码：123456，请进后台自行修改${plain}"
-echo ""
-echo -e "${green}Web 界面访问地址：https://${domain}:15268${plain}"
-echo ""
-echo -e "${green}若要登录前端网页使用【订阅转换】，请直接复制以上地址${plain}"
-echo ""
-echo -e "${green}接下来流程会进入〔X-Panel面板〕x-ui 菜单项${plain}"
-sleep 8
-echo ""
-# --------- 返回菜单 ----------
-show_menu
+    sleep 2
+    show_menu
 }
 
 run_speedtest() {
