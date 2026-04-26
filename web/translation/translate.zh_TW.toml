@@ -228,6 +228,7 @@
 "clients" = "所有客戶端"
 "export" = "匯出連結"
 "exportSelected" = "匯出已選"
+"batchActions" = "批次操作"
 "clone" = "克隆"
 "cloneInbound" = "克隆"
 "cloneInboundContent" = "此入站規則除連接埠（Port）、監聽 IP（Listening IP）和客戶端（Clients）以外的所有設定都將應用於克隆"

@@ -302,6 +302,23 @@
                     <a-button icon="export" :disabled="selectedRowKeys.length === 0" @click="exportSelectedLinks">
                       <template v-if="!isMobile">{{ i18n "pages.inbounds.exportSelected" }} ([[ selectedRowKeys.length ]])</template>
                     </a-button>
+                    <!-- CE 路线图 #102：批量启用 / 禁用 / 删除（dropdown 节省横向空间） -->
+                    <a-dropdown :disabled="selectedRowKeys.length === 0 || batchOps.running">
+                      <a-menu slot="overlay" @click="a => batchActions(a)" :theme="themeSwitcher.currentTheme">
+                        <a-menu-item key="batchEnable">
+                          <a-icon type="check-circle"></a-icon> {{ i18n "pages.inbounds.enable" }}
+                        </a-menu-item>
+                        <a-menu-item key="batchDisable">
+                          <a-icon type="stop"></a-icon> {{ i18n "disabled" }}
+                        </a-menu-item>
+                        <a-menu-item key="batchDelete" :style="{ color: '#FF4D4F' }">
+                          <a-icon type="delete"></a-icon> {{ i18n "delete" }}
+                        </a-menu-item>
+                      </a-menu>
+                      <a-button icon="appstore" :loading="batchOps.running" :disabled="selectedRowKeys.length === 0">
+                        <template v-if="!isMobile">{{ i18n "pages.inbounds.batchActions" }} ([[ selectedRowKeys.length ]])</template>
+                      </a-button>
+                    </a-dropdown>
                   </a-space>
                 </template>
                 <template #extra>
@@ -942,6 +959,11 @@
             },
             // CE 路线图 #101 / #102：批量导出 / 启停删 共用的行选择状态
             selectedRowKeys: [],
+            // CE 路线图 #102：批量操作 in-flight 状态（防止用户误重复点击）
+            batchOps: {
+                running: false,
+                throttleMs: 200,
+            },
         },
 		
         mounted() {
@@ -1985,6 +2007,117 @@ async openPort(port) {
                     copyText.join('\r\n'),
                     'Selected-Inbounds'
                 );
+            },
+            // CE 路线图 #102：批量操作分发（dropdown 菜单点击入口）
+            batchActions(action) {
+                switch (action.key) {
+                    case 'batchEnable':
+                        this.batchUpdateEnable(true);
+                        break;
+                    case 'batchDisable':
+                        this.batchUpdateEnable(false);
+                        break;
+                    case 'batchDelete':
+                        this.batchDelete();
+                        break;
+                }
+            },
+            // CE 路线图 #102：批量启用 / 禁用选中入站
+            // 设计要点（threading / timing）：
+            // - 串行 + 200ms 节流：避免后端连续 SetToNeedRestart 触发 xray 频繁
+            //   重启造成连接抖动（参见 web/web.go:301 的 30s 防抖原本是为单次场景设计的）
+            // - 静默请求：绕过 HttpUtil.post 的 _handleMsg 自动 toast，避免 N
+            //   条请求 N 条 toast 闪屏；最终只弹一条聚合摘要
+            // - 失败聚合：单条失败不中断整批，所有 ID 跑完后一次性提示
+            // - 已是目标态的跳过（不发请求，节省往返）
+            // - in-flight 期间禁用 dropdown（batchOps.running），防止重复触发
+            async batchUpdateEnable(targetState) {
+                if (!this.selectedRowKeys || this.selectedRowKeys.length === 0) return;
+                if (this.batchOps.running) return;
+                this.batchOps.running = true;
+                const silentPost = async (url, data) => {
+                    try {
+                        const resp = await axios.post(url, data);
+                        return HttpUtil._respToMsg(resp);
+                    } catch (e) {
+                        return new Msg(false, (e && e.message) || 'request failed');
+                    }
+                };
+                try {
+                    const ids = this.selectedRowKeys.slice();
+                    const total = ids.length;
+                    let success = 0, skipped = 0;
+                    const failedIds = [];
+
+                    for (const id of ids) {
+                        const dbInbound = this.dbInbounds.find(x => x.id === id);
+                        if (!dbInbound) { failedIds.push(id); continue; }
+                        if (dbInbound.enable === targetState) { skipped++; continue; }
+                        dbInbound.enable = targetState;
+                        const msg = await silentPost('/panel/api/inbounds/update/' + id, dbInbound);
+                        if (msg && msg.success) success++;
+                        else failedIds.push(id);
+                        await PromiseUtil.sleep(this.batchOps.throttleMs);
+                    }
+
+                    const verb = targetState ? '{{ i18n "pages.inbounds.enable" }}' : '{{ i18n "disabled" }}';
+                    const summary = `${verb}: ${success}/${total} (skipped ${skipped})`;
+                    if (failedIds.length === 0) {
+                        this.$message.success(summary);
+                    } else {
+                        this.$message.warning(`${summary} | failed IDs: ${failedIds.join(', ')}`);
+                    }
+                    await this.getDBInbounds();
+                    this.selectedRowKeys = [];
+                } finally {
+                    this.batchOps.running = false;
+                }
+            },
+            // CE 路线图 #102：批量删除选中入站（带二次确认）
+            batchDelete() {
+                if (!this.selectedRowKeys || this.selectedRowKeys.length === 0) return;
+                if (this.batchOps.running) return;
+                const ids = this.selectedRowKeys.slice();
+                this.$confirm({
+                    title: '{{ i18n "pages.inbounds.deleteInbound" }} (' + ids.length + ')',
+                    content: '{{ i18n "pages.inbounds.deleteInboundContent" }}',
+                    class: themeSwitcher.currentTheme,
+                    okText: '{{ i18n "delete" }}',
+                    okType: 'danger',
+                    cancelText: '{{ i18n "cancel" }}',
+                onOk: async () => {
+                    this.batchOps.running = true;
+                    const silentPost = async (url, data) => {
+                        try {
+                            const resp = await axios.post(url, data);
+                            return HttpUtil._respToMsg(resp);
+                        } catch (e) {
+                            return new Msg(false, (e && e.message) || 'request failed');
+                        }
+                    };
+                    try {
+                        const total = ids.length;
+                        let success = 0;
+                        const failedIds = [];
+                        for (const id of ids) {
+                            const msg = await silentPost('/panel/api/inbounds/del/' + id);
+                            if (msg && msg.success) success++;
+                            else failedIds.push(id);
+                            await PromiseUtil.sleep(this.batchOps.throttleMs);
+                        }
+                        const summary = '{{ i18n "delete" }}: ' + success + '/' + total;
+                        if (failedIds.length === 0) {
+                            this.$message.success(summary);
+                        } else {
+                            this.$message.warning(summary + ' | failed IDs: ' + failedIds.join(', '));
+                        }
+                        await this.getDBInbounds();
+                        this.selectedRowKeys = [];
+                    } finally {
+                        this.batchOps.running = false;
+                    }
+                },
+                });
             },
             copy(dbInboundId) {
               dbInbound = this.dbInbounds.find(row => row.id === dbInboundId);
