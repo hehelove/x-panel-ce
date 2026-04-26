@@ -89,6 +89,19 @@
 "logout" = "Log Out"
 "link" = "Manage/Configure Database"
 "navigation" = "Practical Navigation"
+"cronJobs" = "Cron Jobs"
+
+[pages.cronJobs]
+"title" = "Cron Jobs"
+"refresh" = "Refresh"
+"notice" = "Read-only view: lists all cron jobs with their last/next run times. CE #112 — modifying cron from the panel is not allowed to avoid breaking the panel via misclicks."
+"footer" = "Times use the panel's configured timezone; the list auto-refreshes every 30 seconds."
+
+[pages.cronJobs.col]
+"name" = "Job"
+"spec" = "Cron expression"
+"prev" = "Last run"
+"next" = "Next run"
 
 [pages.login]
 "hello" = "Hello"

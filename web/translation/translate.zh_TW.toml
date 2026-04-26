@@ -90,6 +90,19 @@
 "logout" = "登出"
 "link" = "管理/設定資料庫"
 "navigation" = "實用導覽"
+"cronJobs" = "排程任務"
+
+[pages.cronJobs]
+"title" = "排程任務"
+"refresh" = "重新整理"
+"notice" = "此頁面僅供檢視：列出所有 cron 任務及其上次/下次執行時間。CE #112 — 不允許在面板內修改 cron，避免誤操作打掛面板。"
+"footer" = "時間使用面板設定的本地時區；列表每 30 秒自動重新整理。"
+
+[pages.cronJobs.col]
+"name" = "任務名"
+"spec" = "Cron 表達式"
+"prev" = "上次執行"
+"next" = "下次執行"
 
 [pages.login]
 "hello" = "你好"

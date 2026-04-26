@@ -90,6 +90,19 @@
 "logout" = "退出登录"
 "link" = "管理/配置数据库"
 "navigation" = "实用导航"
+"cronJobs" = "定时任务"
+
+[pages.cronJobs]
+"title" = "定时任务"
+"refresh" = "刷新"
+"notice" = "本页只读：列出所有 cron 任务及其上次/下次执行时间。CE #112 — 不允许在面板内修改 cron，避免误操作打挂面板。"
+"footer" = "时间使用面板配置的本地时区；列表 30 秒自动刷新。"
+
+[pages.cronJobs.col]
+"name" = "任务名"
+"spec" = "Cron 表达式"
+"prev" = "上次执行"
+"next" = "下次执行"
 
 [pages.login]
 "hello" = "你好"

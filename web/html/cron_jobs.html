@@ -1,0 +1,173 @@
+{{ template "page/head_start" .}}
+<style>
+    @media (min-width: 769px) {
+        .ant-layout-content {
+            margin: 24px 16px;
+        }
+    }
+    @media (max-width: 768px) {
+        .ant-layout-content {
+            margin: 10px 10px;
+        }
+    }
+    .ant-card-body {
+        padding: 24px;
+    }
+
+    .cron-cell-name {
+        font-weight: 600;
+    }
+
+    .cron-cell-spec {
+        font-family: 'Courier New', Courier, monospace;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+    }
+
+    .dark-theme .cron-cell-spec {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .cron-cell-prev,
+    .cron-cell-next {
+        color: rgba(0, 0, 0, 0.65);
+        font-size: 12px;
+    }
+
+    .dark-theme .cron-cell-prev,
+    .dark-theme .cron-cell-next {
+        color: rgba(255, 255, 255, 0.65);
+    }
+</style>
+{{ template "page/head_end" .}}
+
+{{ template "page/body_start" .}}
+<a-layout id="app" v-cloak :class="themeSwitcher.currentTheme">
+    <a-sidebar></a-sidebar>
+
+    <a-layout id="content-layout">
+        <a-layout-content>
+            <a-spin :spinning="loading">
+                <a-row :gutter="[isMobile ? 8 : 16, isMobile ? 0 : 12]">
+                    <a-col :span="24">
+                        <a-card hoverable>
+                            <template #title>
+                                <a-icon type="schedule"></a-icon>
+                                <span style="margin-left: 8px;">{{ i18n "pages.cronJobs.title" }}</span>
+                            </template>
+                            <template #extra>
+                                <a-button-group>
+                                    <a-button icon="sync" @click="refresh" :loading="loading">{{ i18n "pages.cronJobs.refresh" }}</a-button>
+                                </a-button-group>
+                            </template>
+
+                            <a-alert type="info" show-icon style="margin-bottom: 16px;">
+                                <template #message>{{ i18n "pages.cronJobs.notice" }}</template>
+                            </a-alert>
+
+                            <a-table :columns="columns"
+                                     :data-source="jobs"
+                                     :row-key="r => r.id"
+                                     :pagination="false"
+                                     :scroll="isMobile ? {} : { x: 720 }"
+                                     size="middle">
+                                <template slot="name" slot-scope="text, row">
+                                    <span class="cron-cell-name">[[ row.name ]]</span>
+                                </template>
+                                <template slot="spec" slot-scope="text, row">
+                                    <span class="cron-cell-spec">[[ row.spec ]]</span>
+                                </template>
+                                <template slot="prev" slot-scope="text, row">
+                                    <span class="cron-cell-prev">[[ row.prevText ]]</span>
+                                    <a-tooltip v-if="row.prev && !isZeroTime(row.prev)" :overlay-class-name="themeSwitcher.currentTheme">
+                                        <template slot="title"><span>[[ formatTime(row.prev) ]]</span></template>
+                                        <a-icon type="info-circle" style="margin-left: 4px; opacity: 0.6;"></a-icon>
+                                    </a-tooltip>
+                                </template>
+                                <template slot="next" slot-scope="text, row">
+                                    <span class="cron-cell-next">[[ row.nextText ]]</span>
+                                    <a-tooltip v-if="row.next && !isZeroTime(row.next)" :overlay-class-name="themeSwitcher.currentTheme">
+                                        <template slot="title"><span>[[ formatTime(row.next) ]]</span></template>
+                                        <a-icon type="info-circle" style="margin-left: 4px; opacity: 0.6;"></a-icon>
+                                    </a-tooltip>
+                                </template>
+                            </a-table>
+
+                            <a-divider style="margin-top: 24px;"></a-divider>
+                            <p style="opacity: 0.7; font-size: 12px;">
+                                {{ i18n "pages.cronJobs.footer" }}
+                            </p>
+                        </a-card>
+                    </a-col>
+                </a-row>
+            </a-spin>
+        </a-layout-content>
+    </a-layout>
+</a-layout>
+
+{{template "page/body_scripts" .}}
+{{template "component/aSidebar" .}}
+{{template "component/aThemeSwitch" .}}
+<script>
+    const app = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            themeSwitcher,
+            loading: false,
+            jobs: [],
+            timer: null,
+            columns: [
+                { title: '{{ i18n "pages.cronJobs.col.name" }}', dataIndex: 'name', width: 180, scopedSlots: { customRender: 'name' } },
+                { title: '{{ i18n "pages.cronJobs.col.spec" }}', dataIndex: 'spec', width: 160, scopedSlots: { customRender: 'spec' } },
+                { title: '{{ i18n "pages.cronJobs.col.prev" }}', dataIndex: 'prevText', width: 160, scopedSlots: { customRender: 'prev' } },
+                { title: '{{ i18n "pages.cronJobs.col.next" }}', dataIndex: 'nextText', width: 160, scopedSlots: { customRender: 'next' } },
+            ],
+        },
+        computed: {
+            isMobile() {
+                return window.innerWidth < 769;
+            },
+        },
+        async mounted() {
+            await this.refresh();
+            this.timer = setInterval(() => this.refresh(), 30000);
+        },
+        beforeDestroy() {
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = null;
+            }
+        },
+        methods: {
+            async refresh() {
+                this.loading = true;
+                try {
+                    const resp = await axios.get(`${basePath}panel/cron_jobs/list`);
+                    this.jobs = (resp && resp.data && resp.data.obj) || [];
+                } catch (e) {
+                    // 静默失败：保留上一次数据
+                } finally {
+                    this.loading = false;
+                }
+            },
+            isZeroTime(t) {
+                if (!t) return true;
+                const d = new Date(t);
+                if (isNaN(d.getTime())) return true;
+                return d.getFullYear() < 2000;
+            },
+            formatTime(t) {
+                if (this.isZeroTime(t)) return '-';
+                try {
+                    return DateUtil.formatMillis(new Date(t).getTime());
+                } catch (e) {
+                    return new Date(t).toLocaleString();
+                }
+            },
+        },
+    });
+</script>
+{{ template "page/body_end" .}}

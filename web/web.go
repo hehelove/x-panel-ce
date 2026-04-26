@@ -289,16 +289,40 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	return engine, nil
 }
 
+// trackedAddJob 是 cron.AddJob 的包装：成功后把 (name, spec, EntryID)
+// 注册到 service.GlobalCronInspector，供 CE #112 cron 任务可视化页签读取。
+// 返回 (id, err) 与 cron.AddJob 一致，调用方仍可按需保留早返回逻辑。
+func (s *Server) trackedAddJob(name, spec string, j cron.Job) (cron.EntryID, error) {
+	id, err := s.cron.AddJob(spec, j)
+	if err != nil {
+		logger.Warningf("CE: cron add job %q (%s) failed: %v", name, spec, err)
+		return 0, err
+	}
+	service.GlobalCronInspector.Track(id, name, spec)
+	return id, nil
+}
+
+// trackedAddFunc 同 trackedAddJob，但接 func()（cron.AddFunc 路径）。
+func (s *Server) trackedAddFunc(name, spec string, fn func()) (cron.EntryID, error) {
+	id, err := s.cron.AddFunc(spec, fn)
+	if err != nil {
+		logger.Warningf("CE: cron add func %q (%s) failed: %v", name, spec, err)
+		return 0, err
+	}
+	service.GlobalCronInspector.Track(id, name, spec)
+	return id, nil
+}
+
 func (s *Server) startTask() {
 	err := s.xrayService.RestartXray(true)
 	if err != nil {
 		logger.Warning("start xray failed:", err)
 	}
 	// Check whether xray is running every second
-	s.cron.AddJob("@every 1s", job.NewCheckXrayRunningJob())
+	s.trackedAddJob("CheckXrayRunning", "@every 1s", job.NewCheckXrayRunningJob())
 
 	// Check if xray needs to be restarted every 30 seconds
-	s.cron.AddFunc("@every 30s", func() {
+	s.trackedAddFunc("MaybeRestartXray", "@every 30s", func() {
 		if s.xrayService.IsNeedRestartAndSetFalse() {
 			err := s.xrayService.RestartXray(false)
 			if err != nil {
@@ -310,21 +334,18 @@ func (s *Server) startTask() {
 	go func() {
 		time.Sleep(time.Second * 5)
 		// Statistics every 10 seconds, start the delay for 5 seconds for the first time, and staggered with the time to restart xray
-		s.cron.AddJob("@every 10s", job.NewXrayTrafficJob())
+		s.trackedAddJob("XrayTraffic", "@every 10s", job.NewXrayTrafficJob())
 	}()
 
-	// check client ips from log file every 10 sec
-	s.cron.AddJob("@every 10s", job.NewCheckClientIpJob())
-
-	// check client ips from log file every day
-	s.cron.AddJob("@daily", job.NewClearLogsJob())
+	s.trackedAddJob("CheckClientIp", "@every 10s", job.NewCheckClientIpJob())
+	s.trackedAddJob("ClearLogs", "@daily", job.NewClearLogsJob())
 
 	// CE 路线图 #15：每日 0:00 检查所有客户端的 resetCycle，按需自动重置流量
-	s.cron.AddJob("@daily", job.NewResetTrafficCycleJob())
+	s.trackedAddJob("ResetTrafficCycle", "@daily", job.NewResetTrafficCycleJob())
 
 	// CE 路线图 #100：每天 03:00 自动 DB 备份；启动 30s 后异步触发一次首次备份。
 	// 6 段 cron 表达式（WithSeconds 模式）：秒0 / 分0 / 时3 / 任意日 / 任意月 / 任意周。
-	s.cron.AddJob("0 0 3 * * *", job.NewDBBackupJob())
+	s.trackedAddJob("DBBackup", "0 0 3 * * *", job.NewDBBackupJob())
 	go func() {
 		time.Sleep(30 * time.Second)
 		job.NewDBBackupJob().Run()
@@ -340,19 +361,15 @@ func (s *Server) startTask() {
 			runtime = "@daily"
 		}
 		logger.Infof("Tg notify enabled,run at %s", runtime)
-		_, err = s.cron.AddJob(runtime, job.NewStatsNotifyJob())
-		if err != nil {
-			logger.Warning("Add NewStatsNotifyJob error", err)
+		if _, err := s.trackedAddJob("StatsNotify", runtime, job.NewStatsNotifyJob()); err != nil {
 			return
 		}
 
-		// check for Telegram bot callback query hash storage reset
-		s.cron.AddJob("@every 2m", job.NewCheckHashStorageJob())
+		s.trackedAddJob("CheckHashStorage", "@every 2m", job.NewCheckHashStorageJob())
 
-		// Check CPU load and alarm to TgBot if threshold passes
 		cpuThreshold, err := s.settingService.GetTgCpu()
 		if (err == nil) && (cpuThreshold > 0) {
-			s.cron.AddJob("@every 10s", job.NewCheckCpuJob())
+			s.trackedAddJob("CheckCpu", "@every 10s", job.NewCheckCpuJob())
 		}
 	} else {
 		s.cron.Remove(entry)
@@ -372,6 +389,8 @@ func (s *Server) Start() (err error) {
 		return err
 	}
 	s.cron = cron.New(cron.WithLocation(loc), cron.WithSeconds())
+	// CE 路线图 #112：把 cron 实例绑定到全局 inspector，供 /panel/cron_jobs 页面读取
+	service.GlobalCronInspector.Bind(s.cron)
 	s.cron.Start()
 
 	engine, err := s.initRouter()
