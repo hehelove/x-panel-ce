@@ -227,6 +227,7 @@
 "client" = "客户/用户"
 "clients" = "所有客户端"
 "export" = "导出链接"
+"exportSelected" = "导出选中"
 "clone" = "克隆"
 "cloneInbound" = "克隆"
 "cloneInboundContent" = "此入站规则除端口（Port）、监听 IP（Listening IP）和客户端（Clients）以外的所有配置都将应用于克隆"

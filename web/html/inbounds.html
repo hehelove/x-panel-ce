@@ -298,6 +298,10 @@
                     <a-button type="primary" icon="link" @click="handleSubscriptionConversion">
                       <template v-if="!isMobile">{{ i18n "pages.inbounds.is_subConversion" }}</template>
                     </a-button>
+                    <!-- CE 路线图 #101：批量导出选中入站节点链接 -->
+                    <a-button icon="export" :disabled="selectedRowKeys.length === 0" @click="exportSelectedLinks">
+                      <template v-if="!isMobile">{{ i18n "pages.inbounds.exportSelected" }} ([[ selectedRowKeys.length ]])</template>
+                    </a-button>
                   </a-space>
                 </template>
                 <template #extra>
@@ -353,6 +357,7 @@
                       :indent-size="0"
                       :row-class-name="dbInbound => (dbInbound.isMultiUser() ? '' : 'hideExpandIcon')"
                       :style="{ marginTop: '10px' }"
+                      :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: keys => selectedRowKeys = keys }"
                       :locale='{ filterConfirm: `{{ i18n "confirm" }}`, filterReset: `{{ i18n "reset" }}`, emptyText: `{{ i18n "noData" }}` }'>
                     <template slot="action" slot-scope="text, dbInbound">
                       <a-dropdown :trigger="['click']">
@@ -935,6 +940,8 @@
                 submitting: false,
                 lastResult: null,
             },
+            // CE 路线图 #101 / #102：批量导出 / 启停删 共用的行选择状态
+            selectedRowKeys: [],
         },
 		
         mounted() {
@@ -1957,6 +1964,27 @@ async openPort(port) {
                     copyText.push(dbInbound.genInboundLinks(this.remarkModel));
                 }
                 txtModal.show('{{ i18n "pages.inbounds.export"}}', copyText.join('\r\n'), 'All-Inbounds');
+            },
+            // CE 路线图 #101：导出选中入站的全部链接（复用 genInboundLinks + txtModal）
+            // - 完全前端实现，零后端改动；零网络外发；零持久化
+            // - 如未勾选任何行直接 no-op（按钮已 disabled，此处兜底）
+            exportSelectedLinks() {
+                if (!this.selectedRowKeys || this.selectedRowKeys.length === 0) {
+                    return;
+                }
+                const idSet = new Set(this.selectedRowKeys);
+                const selected = this.dbInbounds.filter(x => idSet.has(x.id));
+                if (selected.length === 0) {
+                    return;
+                }
+                const copyText = selected
+                    .map(dbInbound => dbInbound.genInboundLinks(this.remarkModel))
+                    .filter(s => s && s.length > 0);
+                txtModal.show(
+                    '{{ i18n "pages.inbounds.exportSelected" }} (' + selected.length + ')',
+                    copyText.join('\r\n'),
+                    'Selected-Inbounds'
+                );
             },
             copy(dbInboundId) {
               dbInbound = this.dbInbounds.find(row => row.id === dbInboundId);
