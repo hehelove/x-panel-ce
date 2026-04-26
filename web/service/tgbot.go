@@ -229,6 +229,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 			{Command: "restartx", Description: "♻️ 重启〔X-Panel 面板〕"},
 			{Command: "checkupdate", Description: "🆕 检查 x-panel-ce 是否有新版本"},
 			{Command: "selfcheck", Description: "🛡️ 部署自检报告（仅本机统计，不外发）"},
+			{Command: "webssh", Description: "🛰️ webssh 服务状态/启停（安装请用 SSH 内 x-ui 菜单 26）"},
 		},
 	})
 	if err != nil {
@@ -628,6 +629,17 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		onlyMessage = true
 		if isAdmin {
 			t.sendSelfCheckReport(chatId)
+		} else {
+			handleUnknownCommand()
+		}
+
+	// CE 路线图 #10 + #12：TG 端 webssh 控制（与 Stage 2 #7 实现的
+	// x-panel-ce-webssh.service 联动）。仅做"状态/启停"——安装/卸载
+	// 涉及 pipx/pip 选择和端口确认，必须留在 SSH 中由 x-ui 菜单 26 完成。
+	case "webssh":
+		onlyMessage = true
+		if isAdmin {
+			t.handleWebsshCommand(chatId, commandArgs)
 		} else {
 			handleUnknownCommand()
 		}
@@ -2647,6 +2659,73 @@ func (t *Tgbot) sendSelfCheckReport(chatId int64) {
 	footer := "—— 本报告仅在当前 chat 内回显，未向任何远程服务器上传。"
 
 	t.SendMsgToTgbot(chatId, header+systemInfo+"\n"+inboundSummary+footer)
+}
+
+// CE 路线图 #10 + #12：TG 端 webssh 控制（仅状态/启停）。
+// 与 Stage 2 #7（x-panel-ce-webssh.service）联动；不在 TG 内做安装，
+// 因为安装涉及 pipx/pip 选择和端口确认，需要在 SSH 上下文里交互完成。
+const ceWebsshUnit = "x-panel-ce-webssh.service"
+
+func (t *Tgbot) handleWebsshCommand(chatId int64, args []string) {
+	if len(args) == 0 {
+		usage := "🛰️ /webssh 用法\n" +
+			"  /webssh status   查询服务状态\n" +
+			"  /webssh start    启动服务\n" +
+			"  /webssh stop     停止服务\n\n" +
+			"📦 安装/卸载请通过 SSH 进入服务器，执行 x-ui 命令并选择菜单选项 26。\n" +
+			"🔒 出于安全，service 默认仅监听 127.0.0.1，需配合 SSH 端口转发使用。\n\n" +
+			"当前状态：\n" + t.queryWebsshStatus()
+		t.SendMsgToTgbot(chatId, usage)
+		return
+	}
+
+	switch args[0] {
+	case "status":
+		t.SendMsgToTgbot(chatId, t.queryWebsshStatus())
+	case "start":
+		out, err := exec.Command("systemctl", "start", ceWebsshUnit).CombinedOutput()
+		if err != nil {
+			t.SendMsgToTgbot(chatId, "❌ 启动失败：\n"+strings.TrimSpace(string(out))+"\n\n"+err.Error())
+			return
+		}
+		t.SendMsgToTgbot(chatId,
+			"✅ 已下发启动指令。\n"+
+				"💡 服务监听 127.0.0.1，请在本地另起 SSH tunnel：\n"+
+				"`ssh -L 9999:127.0.0.1:9999 user@server`\n"+
+				"然后浏览器访问 http://127.0.0.1:9999\n\n"+
+				"实时状态：\n"+t.queryWebsshStatus())
+	case "stop":
+		out, err := exec.Command("systemctl", "stop", ceWebsshUnit).CombinedOutput()
+		if err != nil {
+			t.SendMsgToTgbot(chatId, "❌ 停止失败：\n"+strings.TrimSpace(string(out))+"\n\n"+err.Error())
+			return
+		}
+		t.SendMsgToTgbot(chatId, "✅ 已下发停止指令。\n\n实时状态：\n"+t.queryWebsshStatus())
+	default:
+		t.SendMsgToTgbot(chatId, "❌ 未知子命令：`"+args[0]+"`\n可用：status / start / stop")
+	}
+}
+
+func (t *Tgbot) queryWebsshStatus() string {
+	activeOut, _ := exec.Command("systemctl", "is-active", ceWebsshUnit).CombinedOutput()
+	enabledOut, _ := exec.Command("systemctl", "is-enabled", ceWebsshUnit).CombinedOutput()
+	active := strings.TrimSpace(string(activeOut))
+	enabled := strings.TrimSpace(string(enabledOut))
+
+	icon := "🔴"
+	if active == "active" {
+		icon = "🟢"
+	} else if active == "activating" || active == "reloading" {
+		icon = "🟡"
+	}
+
+	return fmt.Sprintf(
+		"%s webssh 服务状态\n"+
+			"  - 单元: `%s`\n"+
+			"  - is-active: `%s`\n"+
+			"  - is-enabled: `%s`",
+		icon, ceWebsshUnit, active, enabled,
+	)
 }
 
 func (t *Tgbot) UserLoginNotify(username string, password string, ip string, time string, status LoginStatus) {
