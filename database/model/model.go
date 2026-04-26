@@ -116,13 +116,16 @@ type Client struct {
 	//   0 = 从不（默认，行为与上游一致）
 	//   1 = 每日（每天 0:00 由 cron 触发）
 	//   7 = 每周（仅周一 0:00 触发）
-	//   30 = 每月（仅每月 1 号 0:00 触发；#30 实现了按指定 1-31 号触发会
-	//        在另一个字段 ResetDay 上扩展，本字段保持枚举语义）
+	//   30 = 每月（结合 ResetDay 字段在 1-31 号触发，月底 fallback）
 	// 该字段存于 inbound.settings 的 client JSON 内，xray 写入阶段会被
 	// xray.go 的白名单逻辑剔除，不影响 xray 解析。
-	ResetCycle int    `json:"resetCycle" form:"resetCycle"`
-	CreatedAt  int64  `json:"created_at,omitempty"`
-	UpdatedAt  int64  `json:"updated_at,omitempty"`
+	ResetCycle int `json:"resetCycle" form:"resetCycle"`
+	// CE 路线图 #30：每月重置流量的具体日期，1-31。
+	//   仅在 ResetCycle == 30 时生效；0 或越界值视为 1。
+	//   若值大于当月最大天数（如 2 月填 31），则在当月最后一天 fallback。
+	ResetDay  int   `json:"resetDay" form:"resetDay"`
+	CreatedAt int64 `json:"created_at,omitempty"`
+	UpdatedAt int64 `json:"updated_at,omitempty"`
 }
 
 type VLESSSettings struct {

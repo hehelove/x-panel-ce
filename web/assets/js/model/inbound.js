@@ -1901,6 +1901,7 @@ Inbound.VmessSettings.VMESS = class extends XrayCommonClass {
         comment = '',
         reset = 0,
         resetCycle = 0,
+        resetDay = 1,
         created_at = undefined,
         updated_at = undefined
     ) {
@@ -1919,6 +1920,8 @@ Inbound.VmessSettings.VMESS = class extends XrayCommonClass {
         this.reset = reset;
         // CE 路线图 #15：流量自动重置周期（0/1/7/30）
         this.resetCycle = resetCycle;
+        // CE 路线图 #30：当 resetCycle == 30 时使用，1-31 指定每月哪天
+        this.resetDay = resetDay;
         this.created_at = created_at;
         this.updated_at = updated_at;
     }
@@ -1939,6 +1942,7 @@ Inbound.VmessSettings.VMESS = class extends XrayCommonClass {
             json.comment,
             json.reset,
             json.resetCycle ?? 0,
+            json.resetDay ?? 1,
             json.created_at,
             json.updated_at,
         );
@@ -2063,6 +2067,7 @@ Inbound.VLESSSettings.VLESS = class extends XrayCommonClass {
         comment = '',
         reset = 0,
         resetCycle = 0,
+        resetDay = 1,
         created_at = undefined,
         updated_at = undefined
     ) {
@@ -2080,6 +2085,7 @@ Inbound.VLESSSettings.VLESS = class extends XrayCommonClass {
         this.comment = comment;
         this.reset = reset;
         this.resetCycle = resetCycle;
+        this.resetDay = resetDay;
         this.created_at = created_at;
         this.updated_at = updated_at;
     }
@@ -2100,6 +2106,7 @@ Inbound.VLESSSettings.VLESS = class extends XrayCommonClass {
             json.comment,
             json.reset,
             json.resetCycle ?? 0,
+            json.resetDay ?? 1,
             json.created_at,
             json.updated_at,
         );
@@ -2215,6 +2222,7 @@ Inbound.TrojanSettings.Trojan = class extends XrayCommonClass {
         comment = '',
         reset = 0,
         resetCycle = 0,
+        resetDay = 1,
         created_at = undefined,
         updated_at = undefined
     ) {
@@ -2231,6 +2239,7 @@ Inbound.TrojanSettings.Trojan = class extends XrayCommonClass {
         this.comment = comment;
         this.reset = reset;
         this.resetCycle = resetCycle;
+        this.resetDay = resetDay;
         this.created_at = created_at;
         this.updated_at = updated_at;
     }
@@ -2249,6 +2258,7 @@ Inbound.TrojanSettings.Trojan = class extends XrayCommonClass {
             comment: this.comment,
             reset: this.reset,
             resetCycle: this.resetCycle,
+            resetDay: this.resetDay,
             created_at: this.created_at,
             updated_at: this.updated_at,
         };
@@ -2268,6 +2278,7 @@ Inbound.TrojanSettings.Trojan = class extends XrayCommonClass {
             json.comment,
             json.reset,
             json.resetCycle ?? 0,
+            json.resetDay ?? 1,
             json.created_at,
             json.updated_at,
         );
@@ -2392,6 +2403,7 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends XrayCommonClass {
         comment = '',
         reset = 0,
         resetCycle = 0,
+        resetDay = 1,
         created_at = undefined,
         updated_at = undefined
     ) {
@@ -2409,6 +2421,7 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends XrayCommonClass {
         this.comment = comment;
         this.reset = reset;
         this.resetCycle = resetCycle;
+        this.resetDay = resetDay;
         this.created_at = created_at;
         this.updated_at = updated_at;
     }
@@ -2428,6 +2441,7 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends XrayCommonClass {
             comment: this.comment,
             reset: this.reset,
             resetCycle: this.resetCycle,
+            resetDay: this.resetDay,
             created_at: this.created_at,
             updated_at: this.updated_at,
         };
@@ -2448,6 +2462,7 @@ Inbound.ShadowsocksSettings.Shadowsocks = class extends XrayCommonClass {
             json.comment,
             json.reset,
             json.resetCycle ?? 0,
+            json.resetDay ?? 1,
             json.created_at,
             json.updated_at,
         );

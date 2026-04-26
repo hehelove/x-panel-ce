@@ -1828,7 +1828,18 @@ func (s *InboundService) ResetClientTrafficByCycle() (int, error) {
 			case 7:
 				shouldReset = weekday == time.Monday
 			case 30:
-				shouldReset = day == 1
+				// CE 路线图 #30：按 ResetDay 决定每月哪天重置；
+				// 0/负值/超月底 → fallback 到当月最后一天，确保 2 月填
+				// 31 也能在月底自动触发。
+				targetDay := c.ResetDay
+				if targetDay <= 0 {
+					targetDay = 1
+				}
+				lastDay := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, now.Location()).Day()
+				if targetDay > lastDay {
+					targetDay = lastDay
+				}
+				shouldReset = day == targetDay
 			}
 			if !shouldReset {
 				continue

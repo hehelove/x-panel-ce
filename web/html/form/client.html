@@ -166,6 +166,18 @@
             <a-select-option :value="30">{{ i18n "pages.inbounds.resetCycleMonthly" }}</a-select-option>
         </a-select>
     </a-form-item>
+    <a-form-item v-if="client.resetCycle === 30">
+        <template slot="label">
+            <a-tooltip>
+                <template slot="title">
+                    <span>{{ i18n "pages.inbounds.resetDayDesc" }}</span>
+                </template>
+                {{ i18n "pages.inbounds.resetDay" }}
+                <a-icon type="question-circle"></a-icon>
+            </a-tooltip>
+        </template>
+        <a-input-number v-model.number="client.resetDay" :min="1" :max="31" style="width: 100%"></a-input-number>
+    </a-form-item>
     <a-form-item v-if="isEdit && clientStats" label='{{ i18n "usage" }}'>
         <a-tag :color="ColorUtils.clientUsageColor(clientStats, app.trafficDiff)">
             [[ SizeFormatter.sizeFormat(clientStats.up) ]] /
