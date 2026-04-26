@@ -1372,7 +1372,10 @@ func (s *ServerService) RestartPanel() error {
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 		errMsg := fmt.Sprintf("关键脚本文件 `%s` 未找到，无法执行重启。", scriptPath)
 		logger.Error(errMsg)
-		return fmt.Errorf(errMsg)
+		// 修复 go vet `non-constant format string in call to fmt.Errorf` 警告：
+		// errMsg 由 fmt.Sprintf 生成，已包含 %s 等格式动词；如果直接作为格式串传给
+		// fmt.Errorf，scriptPath 中如出现 % 字符会被错误解释，且不利于静态分析。
+		return fmt.Errorf("%s", errMsg)
 	}
 	
 	// 〔中文注释〕: 定义要执行的命令和参数。

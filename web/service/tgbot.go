@@ -3846,13 +3846,18 @@ func (t *Tgbot) randomString(length int, charset string) string {
 
 func (t *Tgbot) handleCallbackQuery(ctx *th.Context, cq telego.CallbackQuery) error {
     // 1) 确保 Message 可访问 —— 注意必须调用 cq.Message.Message() 而不是直接访问 .Message
-    if cq.Message == nil || cq.Message.Message == nil {
+    //    cq.Message 是 telego.MaybeInaccessibleMessage 接口；其 .Message 是接口方法（不是字段），
+    //    所以 cq.Message.Message == nil 比较的是 method value（永远 false，go vet 会警告）。
+    //    正确做法：先 nil-check 接口本身，再调用 .Message() 方法拿 *telego.Message 再 nil-check。
+    if cq.Message == nil {
         _ = ctx.Bot().AnswerCallbackQuery(ctx, tu.CallbackQuery(cq.ID).WithText("消息对象不存在"))
         return nil
     }
-
-    // 关键修正：这里要调用方法 Message()
-    msg := cq.Message.Message()   // <- 调用方法，返回 *telego.Message
+    msg := cq.Message.Message() // <- 调用方法，返回 *telego.Message
+    if msg == nil {
+        _ = ctx.Bot().AnswerCallbackQuery(ctx, tu.CallbackQuery(cq.ID).WithText("消息对象不存在"))
+        return nil
+    }
     // 现在 msg 是 *telego.Message，可以访问 Chat / MessageID
     chatIDInt64 := msg.Chat.ID
     messageID := msg.MessageID
