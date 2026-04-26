@@ -23,8 +23,6 @@ import (
 	"io/ioutil" // 〔中文注释〕: 新增，用于读取 HTTP API 响应体。
 	rng "math/rand"    // 用于随机排列
 	"encoding/xml"   // 【新增】: 用于直接解析 RSS XML 响应体
-	"crypto/sha256"
-	"encoding/hex"
 
 	"x-ui/config"
 	"x-ui/database"
@@ -230,6 +228,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 			{Command: "subconverter", Description: "🔄 检测或安装订阅转换"},
 			{Command: "restartx", Description: "♻️ 重启〔X-Panel 面板〕"},
 			{Command: "checkupdate", Description: "🆕 检查 x-panel-ce 是否有新版本"},
+			{Command: "selfcheck", Description: "🛡️ 部署自检报告（仅本机统计，不外发）"},
 		},
 	})
 	if err != nil {
@@ -611,6 +610,16 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		onlyMessage = true
 		if isAdmin {
 			t.checkCEUpdate(chatId)
+		} else {
+			handleUnknownCommand()
+		}
+
+	// CE 路线图 #4：部署自检报告（替代上游"授权报告"）。
+	// 仅在当前 chat 内回显本机版本 / 系统指标 / 入站统计，不外发任何数据。
+	case "selfcheck":
+		onlyMessage = true
+		if isAdmin {
+			t.sendSelfCheckReport(chatId)
 		} else {
 			handleUnknownCommand()
 		}
@@ -1860,30 +1869,19 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 			// 〔中文注释〕: 如果中奖了（不是 "未中奖" 或 "错误"）。
 			if prize != "未中奖" && prize != "错误" {
 
-			// --- 【新增】: 获取当前时间并格式化 ---
-			winningTime := time.Now().Format("2006-01-02 15:04:05")	
-				
-			// --- 【新增】: 生成防伪校验哈希 ---
-			// 1. 组合所有关键信息：UserID + Prize + WinningTime
-			//    注意：使用 prize 而不是 resultMessage，因为 prize 是干净的奖项名称。
-			dataToHash := strconv.FormatInt(user.ID, 10) + "|" + prize + "|" + winningTime
-			
-			// 2. 计算 SHA256 哈希值
-			hasher := sha256.New()
-			hasher.Write([]byte(dataToHash))
-			// 3. 转换为 16 进制字符串（方便显示）
-			validationHash := hex.EncodeToString(hasher.Sum(nil))[:16] // 取前16位简化显示	
+			winningTime := time.Now().Format("2006-01-02 15:04:05")
 
-			// --- 拼接最终的中奖消息，将用户唯一标识添加到兑奖说明前 ---
+			// CE 路线图 #4：上游中奖消息会拼接一个 SHA256 "防伪码 (Hash)" 字段，
+			// 用于配合远程授权服务器做"兑奖凭证"。CE 已切断授权服务器调用，
+			// 该 hash 在开源 fork 中失去任何兑换语义，反而会误导用户以为
+			// 存在某种"中央兑奖系统"，因此整段移除（含 sha256 / hex import）。
 			finalMessage := resultMessage + "\n\n" +
-							"**中奖用户**: " + userInfo + "\n\n" +
-							"**TG用户ID**: `" + strconv.FormatInt(user.ID, 10) + "`\n\n" +
-				            "**中奖时间**: " + winningTime + "\n\n" +
-				            "**防伪码 (Hash)**: `" + validationHash + "`\n\n" +
-							"**兑奖说明**：请截图此完整消息，\n\n" +
-							"并联系交流群内管理员进行兑奖。\n\n" +
-							"------------->>>>〔x-panel-ce〕项目仓库：\n\n" +
-							"------------->>>> https://github.com/hehelove/x-panel-ce/issues"
+				"**中奖用户**: " + userInfo + "\n\n" +
+				"**TG用户ID**: `" + strconv.FormatInt(user.ID, 10) + "`\n\n" +
+				"**中奖时间**: " + winningTime + "\n\n" +
+				"**说明**：本消息仅用于本地娱乐功能，不连接任何远程兑换服务。\n\n" +
+				"------------->>>>〔x-panel-ce〕项目仓库：\n\n" +
+				"------------->>>> https://github.com/hehelove/x-panel-ce/issues"
 
 			// CE 安全清理（Stage 0.1）：上游"中奖报告"异步上报至上游开发者
 			// 控制的中央 Telegram 频道（含 TG 用户名 / 用户 ID / 主机名），
@@ -2592,6 +2590,55 @@ func (t *Tgbot) prepareServerUsageInfo() string {
 	info += t.I18nBot("tgbot.messages.traffic", "Total=="+common.FormatTraffic(int64(t.lastStatus.NetTraffic.Sent+t.lastStatus.NetTraffic.Recv)), "Upload=="+common.FormatTraffic(int64(t.lastStatus.NetTraffic.Sent)), "Download=="+common.FormatTraffic(int64(t.lastStatus.NetTraffic.Recv)))
 	info += t.I18nBot("tgbot.messages.xrayStatus", "State=="+fmt.Sprint(t.lastStatus.Xray.State))
 	return info
+}
+
+// CE 路线图 #4：部署自检报告（替代上游"授权报告"+ 防伪码）。
+// 与上游 #4 的关键差异：
+//   1) 不携带任何"授权码"/"防伪码"/"会员等级"字段；
+//   2) 不向任何外部 / 中央服务器上传；
+//   3) 仅在当前 chat 内回显，方便部署用户排查 CE 状态。
+func (t *Tgbot) sendSelfCheckReport(chatId int64) {
+	header := fmt.Sprintf(
+		"🛡️ x-panel-ce 部署自检报告\n"+
+			"==============================\n"+
+			"📦 版本: %s (CE, GPL-3.0)\n"+
+			"🔗 上游: https://github.com/xeefei/X-Panel\n"+
+			"🔗 本仓: https://github.com/hehelove/x-panel-ce\n"+
+			"==============================\n\n",
+		config.GetVersion(),
+	)
+
+	systemInfo := t.prepareServerUsageInfo()
+
+	inboundSummary := ""
+	inbounds, err := t.inboundService.GetAllInbounds()
+	if err != nil {
+		inboundSummary = "⚠️ 入站统计读取失败: " + err.Error() + "\n\n"
+	} else {
+		var enabled, total int
+		var totalUp, totalDown int64
+		for _, ib := range inbounds {
+			total++
+			if ib.Enable {
+				enabled++
+			}
+			totalUp += ib.Up
+			totalDown += ib.Down
+		}
+		inboundSummary = fmt.Sprintf(
+			"📊 入站汇总\n"+
+				"  - 入站总数: %d（启用: %d / 禁用: %d）\n"+
+				"  - 总上行: %s\n"+
+				"  - 总下行: %s\n\n",
+			total, enabled, total-enabled,
+			common.FormatTraffic(totalUp),
+			common.FormatTraffic(totalDown),
+		)
+	}
+
+	footer := "—— 本报告仅在当前 chat 内回显，未向任何远程服务器上传。"
+
+	t.SendMsgToTgbot(chatId, header+systemInfo+"\n"+inboundSummary+footer)
 }
 
 func (t *Tgbot) UserLoginNotify(username string, password string, ip string, time string, status LoginStatus) {
