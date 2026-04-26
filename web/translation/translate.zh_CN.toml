@@ -171,6 +171,7 @@
 "emergencyrecovery" = "远程急救还原"
 
 [pages.inbounds]
+"realityRandomDestDesc" = "点击闪电图标从 CE 内置候选池随机选取一个 Reality 偷取域名（同时填入 Target 与 SNI）"
 "allTimeTraffic" = "累计总流量"
 "allTimeTrafficUsage" = "所有时间总使用量"
 "title" = "入站列表"

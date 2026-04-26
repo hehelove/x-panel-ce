@@ -158,6 +158,7 @@
 "getConfigError" = "Terjadi kesalahan saat mengambil file konfigurasi"
 
 [pages.inbounds]
+"realityRandomDestDesc" = "Click the lightning icon to randomly pick a Reality steal-domain from the CE built-in candidate pool (fills both Target and SNI)."
 "allTimeTraffic" = "Total Lalu Lintas"
 "allTimeTrafficUsage" = "Total Penggunaan Sepanjang Waktu"
 "title" = "Masuk"

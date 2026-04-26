@@ -158,6 +158,7 @@
 "getConfigError" = "Yapılandırma dosyası alınırken bir hata oluştu"
 
 [pages.inbounds]
+"realityRandomDestDesc" = "Click the lightning icon to randomly pick a Reality steal-domain from the CE built-in candidate pool (fills both Target and SNI)."
 "allTimeTraffic" = "Toplam Trafik"
 "allTimeTrafficUsage" = "Tüm Zamanların Toplam Kullanımı"
 "title" = "Gelenler"

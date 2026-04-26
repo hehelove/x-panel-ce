@@ -135,6 +135,35 @@ class RandomUtil {
         return lengths.map(len => this.randomSeq(len, { type: "hex" })).join(',');
     }
 
+    // CE 路线图 #3：Reality "偷取" 域名候选池。挑选业界公开推荐、TLS 1.3 +
+    // HTTP/2、未知 ECH 风险低、跨地区可达性好的域名；不使用 Cloudflare /
+    // Google 系（ECH 普及风险）。该清单仅作"随机推荐"，用户仍可在 UI 上
+    // 自由覆盖；不向任何远程服务上传部署信息。
+    static realitySNICandidates = [
+        'www.lovelive-anime.jp',
+        'www.swift.com',
+        'www.tesla.com',
+        'gateway.icloud.com',
+        'www.bing.com',
+        'www.cisco.com',
+        'learn.microsoft.com',
+        'www.amazon.com',
+        'www.cdn-apple.com',
+        'itunes.apple.com',
+    ];
+
+    // CE 路线图 #3：从候选池中随机选 1 个，返回 { dest, sni } 一对一的字段。
+    // dest 直接拼 :443（Reality target 字段约定）；sni 用同一域名。
+    static randomRealitySNI() {
+        const list = this.realitySNICandidates;
+        const idx = this.randomInteger(0, list.length - 1);
+        const domain = list[idx];
+        return {
+            dest: `${domain}:443`,
+            sni: domain,
+        };
+    }
+
     static randomLowerAndNum(len) {
         return this.randomSeq(len, { hasUppercase: false });
     }

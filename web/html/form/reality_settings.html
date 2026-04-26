@@ -12,7 +12,16 @@
             <a-select-option v-for="key in UTLS_FINGERPRINT" :value="key">[[ key ]]</a-select-option>
         </a-select>
     </a-form-item>
-    <a-form-item label='Target'>
+    <a-form-item>
+        <template slot="label">
+            <a-tooltip>
+                <template slot="title">
+                    <span>{{ i18n "pages.inbounds.realityRandomDestDesc" }}</span>
+                </template>
+                Target
+                <a-icon type="thunderbolt" @click="(() => { const r = RandomUtil.randomRealitySNI(); inbound.stream.reality.target = r.dest; inbound.stream.reality.serverNames = r.sni; })()"></a-icon>
+            </a-tooltip>
+        </template>
         <a-input v-model.trim="inbound.stream.reality.target"></a-input>
     </a-form-item>
     <a-form-item label='SNI'>

@@ -158,6 +158,7 @@
 "getConfigError" = "Произошла ошибка при получении конфигурационного файла"
 
 [pages.inbounds]
+"realityRandomDestDesc" = "Click the lightning icon to randomly pick a Reality steal-domain from the CE built-in candidate pool (fills both Target and SNI)."
 "allTimeTraffic" = "Общий трафик"
 "allTimeTrafficUsage" = "Общее использование за все время"
 "title" = "Инбаунды"

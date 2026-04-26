@@ -169,6 +169,7 @@
 "emergencyrecovery" = "Emergency Recovery"
 
 [pages.inbounds]
+"realityRandomDestDesc" = "Click the lightning icon to randomly pick a Reality steal-domain from the CE built-in candidate pool (fills both Target and SNI)."
 "allTimeTraffic" = "All-time Traffic"
 "allTimeTrafficUsage" = "All Time Total Usage"
 "title" = "Inbounds"

@@ -158,6 +158,7 @@
 "getConfigError" = "Ocorreu um erro ao recuperar o arquivo de configuração"
 
 [pages.inbounds]
+"realityRandomDestDesc" = "Click the lightning icon to randomly pick a Reality steal-domain from the CE built-in candidate pool (fills both Target and SNI)."
 "allTimeTraffic" = "Tráfego Total"
 "allTimeTrafficUsage" = "Uso total de todos os tempos"
 "title" = "Inbounds"
