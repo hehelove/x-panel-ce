@@ -383,18 +383,14 @@
                 this.transitCurrentPage = pagination.current;
             },
 
-            // 【拦截方法】：拦截获取链接操作
+            // CE 路线图 #20：远端"获取节点链接"依赖 Stage 5 跨机执行能力，CE 暂未立项。
             getLastLink(record) {
-                 // 【免费版】：拦截获取链接操作
-                this.$message.warning("〔免费基础版〕不支持此操作");
-                return;
+                this.$message.info('远端"获取节点链接"依赖 Stage 5 #20 跨机执行能力，CE 暂未立项。详见 docs/ROADMAP.md § Stage 5。');
             },
 
-             // 执行一键中转部署
+            // CE 路线图 #20：一键中转部署涉及 SSH 远程下发 + 跨机事务，CE 暂未立项。
             async setupRelay(record) {
-                 // 【免费版修改】：拦截部署操作
-                this.$message.warning("〔免费基础版〕不支持此操作");
-                return;
+                this.$message.info('一键中转部署涉及 SSH 远程下发 + 跨机事务，CE 暂未立项。详见 docs/ROADMAP.md § Stage 5。');
             },
 
             // 获取服务器列表
@@ -429,28 +425,28 @@
                 this.visible = true;
             },
 
-            // CE 路线图 #18/#20：上游"多面板管理 + 一键部署中转节点"在免费版中
-            // 弹出"付费 Pro 专属"并引导购买授权码。CE 已切断购买引导，并在
-            // ROADMAP 中将这两项纳入 Stage 5（高风险，跨机操作）。当前后端
-            // 尚未提供主从协议实现，前端给出"功能开发中"中性提示。
+            // CE 路线图 #18/#20/#23：多面板 + 中转部署 + 远程快照三项归属 Stage 5。
+            // Stage 4 完成后明确决策：这些功能涉及新建 Server 表 + SSH 远程
+            // 执行 / 跨机事务，每项需独立立项；当前会话不动代码，只把入口
+            // 改成"长期项目，欢迎贡献"提示，避免误导用户期待。
             async submitServer() {
                 this.visible = false;
                 const h = this.$createElement;
                 this.$info({
-                    title: '功能开发中',
+                    title: 'Stage 5 长期项目（暂未在 CE 中实现）',
                     okText: '我知道了',
-                    width: 560,
+                    width: 600,
                     content: h('div', { style: 'margin-top: 10px; font-size: 15px; line-height: 1.7;' }, [
                         h('p', { style: 'margin-bottom: 12px;' },
-                            '"多面板管理 / 中转节点一键部署" 在 x-panel-ce 路线图（#18 / #20）中归属 Stage 5，目前主从协议尚未在 CE 中实现。'),
-                        h('p', { style: 'margin-bottom: 12px;' },
-                            '欢迎在 GitHub Issues 跟踪进度或贡献 Pull Request。'),
+                            '〔多面板管理 / 一键部署中转 / 数据快照〕在 x-panel-ce 路线图中归属 Stage 5（#18 / #20 / #23）。这三项每项都需要新增 Server 数据库表、SSH 远程执行、跨机事务，属于独立立项，不会在短期内合入主线。'),
+                        h('p', { style: 'margin-bottom: 12px; color: #d46b08;' },
+                            '替代方案：建议同时部署多套独立 x-panel-ce + 各自独立 TG bot，通过 TG 群组手动汇总。该方案安全边界清晰、不引入跨机故障域。'),
                         h('p', { style: 'color: #1890ff; margin-bottom: 0;' }, [
-                            '路线图详情：',
+                            '路线图详情与拆分建议：',
                             h('a', {
-                                attrs: { href: 'https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md', target: '_blank' },
+                                attrs: { href: 'https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md#34-stage-5--主从与中转高级', target: '_blank' },
                                 style: { color: '#1890ff', textDecoration: 'underline', fontWeight: 'bold' },
-                            }, 'docs/ROADMAP.md'),
+                            }, 'docs/ROADMAP.md § Stage 5'),
                         ]),
                     ]),
                     onOk() {},
@@ -458,13 +454,11 @@
             },
 
             deleteServer(record) {
-                this.$message.info("此功能在 Stage 5（路线图 #18）中重写，目前尚未实现。");
-                return;
+                this.$message.info('此功能依赖 Stage 5 #18 主从协议，CE 暂未立项。详见 docs/ROADMAP.md § Stage 5。');
             },
 
             openCheckModal() {
-                this.$message.info("此功能在 Stage 5（路线图 #20）中重写，目前尚未实现。");
-                return;
+                this.$message.info('中转节点连通性检测依赖 Stage 5 #20 跨机执行能力，CE 暂未立项。详见 docs/ROADMAP.md § Stage 5。');
             },
 			copyLink() {
                 if(!this.resultLink) return;
