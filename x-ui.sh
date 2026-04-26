@@ -2215,14 +2215,38 @@ _ce_webssh_do_uninstall() {
 }
 
 # 路线图 #8 — 线路 / IP 质量检测
+# 实现策略：本机优先 (/usr/local/x-ui/linejc.sh)，未安装时从 GitHub raw 兜底
+# （与 #9 ce_dns_region_check 同一模式，统一用户体验）
 ce_line_quality_check() {
+    local script_path="/usr/local/x-ui/linejc.sh"
+    local raw_url="https://raw.githubusercontent.com/hehelove/x-panel-ce/main/linejc.sh"
+
     echo ""
     echo -e "${green}[CE] 路线图 #8 — 线路 / IP 质量检测${plain}"
-    echo -e "    数据源：Cloudflare trace、ipinfo.io、本地 mtr/traceroute"
-    echo -e "    原则：${yellow}不接入任何商业测速 API${plain}"
-    echo ""
-    echo -e "${yellow}    [TODO] 实现尚在 Stage 2.2.C，本菜单项目前为占位。${plain}"
-    echo -e "${green}    进度跟踪：https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md${plain}"
+
+    if [[ -f "${script_path}" ]]; then
+        echo -e "    使用本机已安装脚本：${yellow}${script_path}${plain}"
+        bash "${script_path}"
+    else
+        echo -e "${yellow}    本机未找到 ${script_path}${plain}"
+        echo -e "${yellow}    （旧版 release tarball 未打包，将于下一次 release 起自动打包）${plain}"
+        if ! command -v curl >/dev/null 2>&1; then
+            LOGE "未找到 curl，无法回退到 GitHub raw 拉取，请先安装 curl"
+            before_show_menu
+            return
+        fi
+        echo -e "    尝试从 GitHub raw 拉取最新版：${yellow}${raw_url}${plain}"
+        local tmp
+        tmp=$(mktemp /tmp/linejc.XXXXXX.sh)
+        if curl -fsSL "${raw_url}" -o "${tmp}"; then
+            chmod +x "${tmp}"
+            bash "${tmp}"
+        else
+            LOGE "下载 linejc.sh 失败，请检查网络连通性（${raw_url}）"
+        fi
+        rm -f "${tmp}"
+    fi
+
     before_show_menu
 }
 
