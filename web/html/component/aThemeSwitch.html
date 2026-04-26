@@ -17,6 +17,19 @@
         <a-checkbox :style="{ marginLeft: '2px' }" :checked="themeSwitcher.isUltra"
           @click="themeSwitcher.toggleUltra()"></a-checkbox>
       </a-menu-item>
+      <a-menu-item class="ant-menu-theme-switch ce-color-theme-row">
+        <span>{{ i18n "menu.colorTheme" }}</span>
+        <a-select size="small" :value="themeSwitcher.colorTheme"
+          :style="{ marginLeft: '6px', width: '100px' }"
+          :dropdown-class-name="themeSwitcher.currentTheme"
+          @change="(v) => themeSwitcher.setColorTheme(v)">
+          <a-select-option value="standard">{{ i18n "menu.colorThemeStandard" }}</a-select-option>
+          <a-select-option value="vibrant">{{ i18n "menu.colorThemeVibrant" }}</a-select-option>
+          <a-select-option value="deepsea">{{ i18n "menu.colorThemeDeepsea" }}</a-select-option>
+          <a-select-option value="twilight">{{ i18n "menu.colorThemeTwilight" }}</a-select-option>
+          <a-select-option value="forest">{{ i18n "menu.colorThemeForest" }}</a-select-option>
+        </a-select>
+      </a-menu-item>
     </a-sub-menu>
   </a-menu>
 </template>
@@ -38,15 +51,45 @@
 {{end}}
 
 {{define "component/aThemeSwitch"}}
+<style>
+  /* CE 路线图 #14：5 主题色板（标准 / 炫彩 / 深海 / 暮光 / 幽林）。
+     仅覆盖品牌主色 --color-primary-100，不动 ant-design 的暗/亮 token，
+     与现有 dark/light 双模解耦，可叠加。standard 不附加规则，保持上游默认。*/
+  body.color-theme-vibrant  { --color-primary-100: #b34cd3; }
+  body.color-theme-deepsea  { --color-primary-100: #006b9b; }
+  body.color-theme-twilight { --color-primary-100: #c47ad9; }
+  body.color-theme-forest   { --color-primary-100: #2d8659; }
+  /* 暗色模式下，把 tag-green / 强调色微调，避免主色变化后 tag 偏色不协调。*/
+  body.dark.color-theme-vibrant  { --dark-color-tag-green-color: #d088f0; }
+  body.dark.color-theme-deepsea  { --dark-color-tag-green-color: #5ab9ff; }
+  body.dark.color-theme-twilight { --dark-color-tag-green-color: #e0a4f0; }
+  body.dark.color-theme-forest   { --dark-color-tag-green-color: #6bd194; }
+</style>
 <script>
+  // CE 路线图 #14：色板枚举与默认值统一管理，避免 magic string 散落。
+  const CE_COLOR_THEMES = ['standard', 'vibrant', 'deepsea', 'twilight', 'forest'];
+  function ceLoadColorTheme() {
+    const v = localStorage.getItem('ce-color-theme');
+    return CE_COLOR_THEMES.includes(v) ? v : 'standard';
+  }
+  function ceApplyColorTheme(name) {
+    const body = document.querySelector('body');
+    if (!body) return;
+    CE_COLOR_THEMES.forEach((t) => body.classList.remove('color-theme-' + t));
+    body.classList.add('color-theme-' + name);
+  }
+
   function createThemeSwitcher() {
     const isDarkTheme = localStorage.getItem('dark-mode') === 'true';
     const isUltra = localStorage.getItem('isUltraDarkThemeEnabled') === 'true';
     if (isUltra) {
       document.documentElement.setAttribute('data-theme', 'ultra-dark');
     }
+    const colorTheme = ceLoadColorTheme();
     const theme = isDarkTheme ? 'dark' : 'light';
+    // 注意：保持上游通过 setAttribute('class', ...) 覆盖 body 的语义，再追加色板 class。
     document.querySelector('body').setAttribute('class', theme);
+    ceApplyColorTheme(colorTheme);
     return {
       animationsOff() {
         document.documentElement.setAttribute('data-theme-animations', 'off');
@@ -70,13 +113,17 @@
       },
       isDarkTheme,
       isUltra,
+      colorTheme,
       get currentTheme() {
         return this.isDarkTheme ? 'dark' : 'light';
       },
       toggleTheme() {
         this.isDarkTheme = !this.isDarkTheme;
         localStorage.setItem('dark-mode', this.isDarkTheme);
+        // CE 路线图 #14：上游用 setAttribute('class', ...) 覆盖 body class，
+        // 这会清掉 color-theme-* class，所以切换 dark/light 后必须重应用色板。
         document.querySelector('body').setAttribute('class', this.isDarkTheme ? 'dark' : 'light');
+        ceApplyColorTheme(this.colorTheme);
         document.getElementById('message').className = themeSwitcher.currentTheme;
       },
       toggleUltra() {
@@ -87,7 +134,15 @@
           document.documentElement.removeAttribute('data-theme');
         }
         localStorage.setItem('isUltraDarkThemeEnabled', this.isUltra.toString());
-      }
+      },
+      // CE 路线图 #14：切换色板。容错：无效名回退 standard，避免 localStorage
+      // 被外部脏写时面板异常。
+      setColorTheme(name) {
+        if (!CE_COLOR_THEMES.includes(name)) name = 'standard';
+        this.colorTheme = name;
+        localStorage.setItem('ce-color-theme', name);
+        ceApplyColorTheme(name);
+      },
     };
   }
   const themeSwitcher = createThemeSwitcher();
