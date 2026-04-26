@@ -262,6 +262,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 			{Command: "subconverter", Description: "🔄 检测或安装订阅转换"},
 			{Command: "restartx", Description: "♻️ 重启〔X-Panel 面板〕"},
 			{Command: "checkupdate", Description: "🆕 检查 x-panel-ce 是否有新版本"},
+			{Command: "health", Description: "🩺 综合健康度报告（系统 + Xray + 入站三态 + 流量 Top5）"},
 			{Command: "selfcheck", Description: "🛡️ 部署自检报告（仅本机统计，不外发）"},
 			{Command: "webssh", Description: "🛰️ webssh 服务状态/启停（安装请用 SSH 内 x-ui 菜单 26）"},
 			{Command: "getlinks", Description: "🔗 列出本机入站节点摘要（CE 路线图 #19 第一阶段）"},
@@ -662,6 +663,16 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		onlyMessage = true
 		if isAdmin {
 			t.checkCEUpdate(chatId)
+		} else {
+			handleUnknownCommand()
+		}
+
+	// CE 路线图 #104：综合健康度报告（系统 + xray + 入站三态 + 流量 Top5）。
+	// 全本机数据，不发外部 API；仅 admin 可查。
+	case "health":
+		onlyMessage = true
+		if isAdmin {
+			t.sendCEHealthReport(chatId)
 		} else {
 			handleUnknownCommand()
 		}
