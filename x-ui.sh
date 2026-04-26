@@ -2034,6 +2034,89 @@ iplimit_remove_conflicts() {
     done
 }
 
+# ==========================================================
+# CE 路线图扩展函数（Stage 2 新增）
+# 详细说明见 docs/ROADMAP.md §3.1
+# ==========================================================
+
+# 路线图 #7 / #10 / #12 — 网页版 SSH 工具（webssh）
+# 选型：huashengdun/webssh（MIT，Python tornado）
+ce_webssh_install() {
+    echo ""
+    echo -e "${green}[CE] 路线图 #7 / #10 / #12 — 网页版 SSH 工具（webssh）${plain}"
+    echo -e "    选型：${yellow}huashengdun/webssh${plain}（MIT，Python tornado）"
+    echo -e "    部署：apt python3-pip → pip install webssh → systemd unit"
+    echo -e "    绑定：默认 ${yellow}127.0.0.1${plain}，避免直接公网暴露"
+    echo ""
+    echo -e "${yellow}    [TODO] 实现尚在 Stage 2.2.B，本菜单项目前为占位。${plain}"
+    echo -e "${green}    进度跟踪：https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md${plain}"
+    before_show_menu
+}
+
+# 路线图 #8 — 线路 / IP 质量检测
+ce_line_quality_check() {
+    echo ""
+    echo -e "${green}[CE] 路线图 #8 — 线路 / IP 质量检测${plain}"
+    echo -e "    数据源：Cloudflare trace、ipinfo.io、本地 mtr/traceroute"
+    echo -e "    原则：${yellow}不接入任何商业测速 API${plain}"
+    echo ""
+    echo -e "${yellow}    [TODO] 实现尚在 Stage 2.2.C，本菜单项目前为占位。${plain}"
+    echo -e "${green}    进度跟踪：https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md${plain}"
+    before_show_menu
+}
+
+# 路线图 #9 — 地区服务器 DNS 检测
+# 实现策略：本机优先 (/usr/local/x-ui/dnsjc.sh)，未安装时从 GitHub raw 兜底
+ce_dns_region_check() {
+    local script_path="/usr/local/x-ui/dnsjc.sh"
+    local raw_url="https://raw.githubusercontent.com/hehelove/x-panel-ce/main/dnsjc.sh"
+
+    echo ""
+    echo -e "${green}[CE] 路线图 #9 — 地区服务器 DNS 检测${plain}"
+
+    if [[ -f "${script_path}" ]]; then
+        echo -e "    使用本机已安装脚本：${yellow}${script_path}${plain}"
+        bash "${script_path}"
+    else
+        echo -e "${yellow}    本机未找到 ${script_path}${plain}"
+        echo -e "${yellow}    （旧版 release tarball 未打包，将于下一次 release 起自动打包）${plain}"
+        if ! command -v curl >/dev/null 2>&1; then
+            LOGE "未找到 curl，无法回退到 GitHub raw 拉取，请先安装 curl"
+            before_show_menu
+            return
+        fi
+        echo -e "    尝试从 GitHub raw 拉取最新版：${yellow}${raw_url}${plain}"
+        local tmp
+        tmp=$(mktemp /tmp/dnsjc.XXXXXX.sh)
+        if curl -fsSL "${raw_url}" -o "${tmp}"; then
+            chmod +x "${tmp}"
+            bash "${tmp}"
+        else
+            LOGE "下载 dnsjc.sh 失败，请检查网络连通性（${raw_url}）"
+        fi
+        rm -f "${tmp}"
+    fi
+
+    before_show_menu
+}
+
+# 路线图 #29 — 内核深度调优脚本
+# 应用策略：dry-run 预览 → 备份 → 用户确认（默认 N）→ 写入独立 sysctl 文件
+ce_tuning_kernel() {
+    echo ""
+    echo -e "${green}[CE] 路线图 #29 — 内核深度调优脚本${plain}"
+    echo -e "    覆盖：BBR + FQ / TCP Fast Open / 缓冲区 / 队列长度"
+    echo -e "    应用流程："
+    echo -e "      1) ${yellow}dry-run 预览${plain} 即将写入的 sysctl 项"
+    echo -e "      2) 备份 ${yellow}/etc/sysctl.conf${plain} 到 ${yellow}/etc/sysctl.conf.bak.<ts>${plain}"
+    echo -e "      3) 用户确认（${red}默认 N${plain}）后写入 ${yellow}/etc/sysctl.d/99-x-panel-ce-tuning.conf${plain}"
+    echo -e "      4) 提供回滚菜单项"
+    echo ""
+    echo -e "${yellow}    [TODO] 实现尚在 Stage 2.2.D，本菜单项目前为占位。${plain}"
+    echo -e "${green}    进度跟踪：https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md${plain}"
+    before_show_menu
+}
+
 show_usage() {
     echo -e "         ---------------------"
     echo -e "         |${green}X-Panel 控制菜单用法 ${plain}|${plain}"
@@ -2096,6 +2179,12 @@ show_menu() {
   ${green}24.${plain} Speedtest by Ookla
   ${green}25.${plain} 安装订阅转换 
 ——————————————————————
+  ${green}〔CE 路线图扩展项〕${plain}
+  ${green}26.${plain} 网页版 SSH 工具（webssh, CE）
+  ${green}27.${plain} 线路 / IP 质量检测（CE）
+  ${green}28.${plain} 地区服务器 DNS 检测（CE）
+  ${green}29.${plain} 深度调优脚本（CE, dry-run 默认）
+——————————————————————
   ${green}若在使用过程中有任何问题${plain}
   ${yellow}请到本项目仓库提 Issue：${plain}
   ${green}〔x-panel-ce〕项目地址${plain}
@@ -2104,7 +2193,7 @@ show_menu() {
 ——————————————————————
 "
     show_status
-    echo && read -p "请输入选项 [0-25]: " num
+    echo && read -p "请输入选项 [0-29]: " num
 
     case "${num}" in
     0)
@@ -2185,8 +2274,20 @@ show_menu() {
     25)
         subconverter
         ;;
+    26)
+        ce_webssh_install
+        ;;
+    27)
+        ce_line_quality_check
+        ;;
+    28)
+        ce_dns_region_check
+        ;;
+    29)
+        ce_tuning_kernel
+        ;;
     *)
-        LOGE "请输入正确的数字选项 [0-25]"
+        LOGE "请输入正确的数字选项 [0-29]"
         ;;
     esac
 }

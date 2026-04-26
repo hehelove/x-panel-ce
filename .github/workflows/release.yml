@@ -83,6 +83,8 @@ jobs:
           cp xui-release x-ui/
           cp x-ui.service x-ui/
           cp x-ui.sh x-ui/
+          # CE: 路线图 #9 依赖 dnsjc.sh 在本地 /usr/local/x-ui/ 可用
+          cp dnsjc.sh x-ui/
           mv x-ui/xui-release x-ui/x-ui
           mkdir x-ui/bin
           cd x-ui/bin
