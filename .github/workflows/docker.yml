@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   push:
     tags:
+      # CE 路线图：x-panel-ce 自身 release 用 ce-x.y.z 前缀（区分上游 X-Panel 版本号）；
+      # 兼容性同时保留 v*.*.* 模式，便于上游迁移者无缝触发。
+      - "ce-*.*.*"
       - "v*.*.*"
 
 jobs:
