@@ -7,21 +7,7 @@
 ================================================================================
 -->
 
-> ## 关于本仓库 / About this repository
->
-> **中文：** 本仓库是上游 [`xeefei/X-Panel`](https://github.com/xeefei/X-Panel) 的**纯开源社区分支（Community Edition, CE）**：[`hehelove/x-panel-ce`](https://github.com/hehelove/x-panel-ce)。本 fork 与上游"X-Panel Pro 付费版"**无任何关联**：
-> - **不**销售授权码，**不**接受赞助代币地址，**不**绑定任何"购买机器人"。
-> - 上游所有冠以"Pro"的功能，将在本 CE 中以**完全开源**的形式逐步重写。
-> - 详细差异说明请阅读 [`NOTICE.md`](./NOTICE.md)，许可证保持 [GPL-3.0](./LICENSE)。
->
-> **English:** This is `hehelove/x-panel-ce`, a **fully open-source community fork (CE)** of upstream [`xeefei/X-Panel`](https://github.com/xeefei/X-Panel). It has **no commercial license**, **no Pro tier**, and **no donation wallets**. All upstream "Pro" features are being re-implemented as open source. See [`NOTICE.md`](./NOTICE.md). License remains [GPL-3.0](./LICENSE).
-
----
-
-<p align="center"><a href="#"><img src="./media/X-Panel.png" alt="Image"></a></p>
-
-**---------------------------------------一个更好的面板 • 基于Xray Core构建------------------------------**
-
+# x-panel-ce
 
 [![](https://img.shields.io/github/v/release/hehelove/x-panel-ce.svg?style=for-the-badge)](https://github.com/hehelove/x-panel-ce/releases)
 [![](https://img.shields.io/github/actions/workflow/status/hehelove/x-panel-ce/release.yml.svg?style=for-the-badge)](https://github.com/hehelove/x-panel-ce/actions)
@@ -29,432 +15,269 @@
 [![Downloads](https://img.shields.io/github/downloads/hehelove/x-panel-ce/total.svg?style=for-the-badge)](https://github.com/hehelove/x-panel-ce/releases/latest)
 [![License](https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true&style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
-> **声明：** 此项目仅供个人学习、交流使用，请遵守当地法律法规，勿用于非法用途；请勿用于生产环境。
+> **关于本仓库 / About this repository**
+>
+> 本仓库 `hehelove/x-panel-ce` 是上游 [`xeefei/X-Panel`](https://github.com/xeefei/X-Panel) 的**纯开源社区分支（Community Edition, CE）**。本 fork 与上游"X-Panel Pro 付费版"**无任何关联**：
+> - **不**销售授权码，**不**接受赞助代币地址，**不**绑定任何"购买机器人"。
+> - **不**进行任何匿名遥测或部署 ID 上报。
+> - 上游所有冠以"Pro"的功能，均在本 CE 中以**完全开源**的形式重写。
+>
+> 详见 [`NOTICE.md`](./NOTICE.md) 与 [`docs/ROADMAP.md`](./docs/ROADMAP.md)；许可证保持 [GPL-3.0](./LICENSE)。
 
-> **注意：** 在使用此项目和〔教程〕过程中，若因违反以上声明使用规则而产生的一切后果由使用者自负。
+> **声明**：本项目仅供个人学习、研究 Xray / VLESS / Reality 等代理协议之用。请遵守当地法律法规，**不得**用于任何非法用途，亦不建议用于生产环境。因使用本项目造成的任何后果由使用者自行承担。
 
+---
 
-------------
-## ✰CE 路线图：将以开源方式重写的目标功能✰
+## 项目简介
 
-> **结构化版本**：完整的"上游源码坐标 / 依赖评估 / CE 策略 / 所属 Stage"清单，
-> 以及术语对照（"会员/积分/授权码"在 CE 中的等价或替代），见
-> [`docs/ROADMAP.md`](./docs/ROADMAP.md)。下方流水文案保留以方便对照原 X-Panel 文档。
+`x-panel-ce` 是基于 Xray-core 的多协议代理面板，提供 Web UI 与 Telegram 机器人两套管理入口。
 
-#### 1、新增 -【CE 路线图】的面板后台UI，添加醒目的“X-Panel-Pro”标识，
-#### 2、优化 -【CE 路线图】TG端 【版本更新】提示功能，增加详细的“更新说明”，
-#### 3、增加〔CE 面板后台〕，使用 Reality 协议时，可点击随机更换所偷的域名，
-#### 4、新增 -【CE 路线图】TG端 的【发送授权报告】，增加“唯一授权防伪码”，
-#### 5、优化 -【CE 路线图】安装脚本界面，增加【CE】该有的“明确标识”，
-#### 6、优化 -【CE 路线图】TG端的显示方式，增加该有的“会员标识”，
-#### 7、新增 -【CE 路线图】安装脚本，有“网页版SSH工具”可选部署，脚本中〔第26选项〕，
-#### 8、新增 - 【CE 路线图】安装脚本，有“线路和IP质量检测”可去使用，脚本中〔第27选项〕，
-#### 9、新增 - 【CE 路线图】安装脚本，有“地区服务器DNS检测”可去使用，脚本中〔第28选项〕，
-#### 10、新增 -【CE 路线图】---->>>TG端，同步有“网页版SSH工具”可选安装，
-#### 11、优化 - 【CE 路线图】---->>>TG端，点击“服务器状态”时的“版本号显示”，
-#### 12、说明 - 【CE 路线图】TG端中，使用命令：/webssh，安装“网页版SSH”，
-#### 13、优化 -〔CE〕中的〔一键配置〕功能，有更友好的提示方式，
-#### 14、新增 -【CE 路线图】---->>>面板后台的【首页 UI】，目前是有“5种”可选：标准布局 (默认)，炫彩动画，深海科技，暮光薰衣，和幽林秘境；你喜欢什么类型的主题，就去点击“选定”之后，就不会自动变了，若后期需要更换，就重选，
-#### 15、新增 -【CE 路线图】---->>>在“创建入站”时，可以在页面上更加方便地选择【重置流量】的方式：有每日重置，每周重置，按月重置，或从不重置，
-#### 16、新增 -〔X-Panel 面板〕----->>【CE 路线图】TG端“每日报告”，可定制【发送内容】，自己可点击“打开或关闭”，并且可以选择【发送时间】，可按天，或者每周，每月发，
-#### 17、优化 -【CE 路线图】的“授权码验证机制”，增加【后台联网验证】，以及“机器指纹”等属性，
-#### 18、新增 -〔X-Panel 面板〕----->>【CE 路线图】TG端“多面板管理”，一个机器人可同时管理其他面板，可以很丝滑地远程操作【被控端 VPS】，
-#### 19、新增 -〔X-Panel 面板〕----->>【CE 路线图】TG端“获取节点链接”功能，支持【本机】和【远程被控端 VPS】都能获取，开发此功能的目的在于：不用进〔面板后台〕，就能在 TG端 获取到之前已经创建过的“链接”，
-#### 20、新增 -〔X-Panel 面板〕----->>【CE 路线图】“一键部署中转节点”，解决了不懂配置的麻烦，已实现：远程Socks5创建 --> 本机路由配置 --> 本机入口创建 --> 生成“二维码和链接”，“小手一点”，直接可用，
-#### 21、新增 -〔X-Panel 面板〕----->>【申请安装证书】“第18选项”，有“备用方式申请证书”，当用常规方式【1】申请不下来时，可以试试“备用方式”，
-#### 22、新增 -〔X-Panel 面板〕----->>【申请安装证书】“第18选项”，有“可自定义证书路径”，自己进入 VPS 中“手动上传证书”，复制路径，在脚本中填入即可，
-#### 23、新增 -〔X-Panel 面板〕----->>【CE 路线图】“深度调优脚本”，包含 BBR+FQ, TCP Fast Open, 内存缓冲区及队列优化，在〔CE〕脚本中“第29选项”可直接用，
-#### 24、新增 -〔X-Panel 面板〕----->>【CE 路线图】“首页会员等级”显示，能够明确展示：自己的会员等级，授权码信息，以及“版本更新”提示，
-#### 25、新增 -〔X-Panel 面板〕----->>【CE 路线图】“节点上/下线TG通知”功能，对于【拼车】的宝子，能明确知道：哪个节点，什么时候上线？或者下线时间，做到“心中有数”，
-#### 26、新增 -〔X-Panel 面板〕----->>【CE 路线图】“签到得积分”功能，后期针对有【积分】的宝子，会不断推出：相应的【特权】和【福利待遇】，
-#### 27、新增 -〔X-Panel 面板〕----->>【CE 路线图】“TG端签到得积分”功能，推出：积分查询，积分换购，授权码查询，修改用户名，积分转移/打赏，以及“积分排行榜”，
-#### 28、新增 -〔X-Panel 面板〕----->>【CE 路线图】“TG端签到得积分”功能，推出【“积分换购”的可用功能】：A、消耗1000积分“自助重置换绑时间”，B、消耗5000积分“自助换购一个普通授权码”，
-#### 29、新增 -〔X-Panel 面板〕----->>【CE 路线图】“创建数据快照 + 远程急救还原”的提示功能： 可直观通过「终端UI界面」看到具体「备份 + 还原」步骤；用法：面板报错“崩了”，不用像之前那样：卸载面板 -->> 重装面板，更不用很麻烦去“重装系统”解决，直接：远程急救还原，前提就是：你自己要知道，在面板“正常运行”的时候，去「备份数据快照」，
-#### 30、新增 -〔X-Panel 面板〕----->>【CE 路线图】“每月重置流量”功能：可输入1—31之间的任意数字，比如：输入12，即代表“每月12号”「重置入站流量」，以便提供更友好的“重置流量方式”，
-#### 31、新增 -〔X-Panel 面板〕----->>【CE 路线图】“批量部署节点”功能：可直接在面板后台的“一键配置”中去使用，点击一次可批量部署生成10条「VLESS + TCP + Reality + Vision」协议组合的入站，
-#### 32、~~购买机器人功能~~：上游商业项独有，**CE 不实现**（不接入授权码销售、配额充值、积分换购等任何收款流程）。
-![76](./media/76.png)
+支持协议：VMess、VLESS、Trojan、Shadowsocks、Dokodemo-door、Socks、HTTP、WireGuard，以及 XTLS 原生协议族（RPRX-Direct、Vision、REALITY）。
 
-------------
-## ✰你必须要看的【重要安全提示/警告】✰
-#### 1、请勿使用【http明文模式】登录管理面板，因为明文会造成信息泄露；这个安全问题社区讨论过，
-#### 2、可使用设置【SSH端口转发功能】去登录面板或安装证书之后用https加密方式登录；两种方式选择其一，
-![30](./media/30.png)
-#### 3、若无域名那就按照脚本提示去做【ssh转发】；有域名则可选择更加安全的【申请安装证书】方式，
-#### 4、Windows电脑首先通过快捷键【Win + R】调出运行窗口，在里面输入【cmd】打开本地终端服务，
-![36](./media/36.png)
-![31](./media/31.png)
-![32](./media/32.png)
-![33](./media/33.png)
-#### 5、若在搭建之前没有翻墙加密，则【http明文模式】登录面板有很大的信息泄露安全风险，那建议你第一次搭建成功之后，去修改用户/密码，和访问路径，后期则通过搭建好的代理加密访问，
-![34](./media/34.png)
-#### 6、在做【ssh转发】过程中，本地电脑的终端不能关闭，保持打开不能断开；且每一次要登录〔X-Panel面板〕管理后台都要做【ssh转发】，因为关闭之后就失效了。
-![35](./media/35.png)
-#### PS：上述两种方法：【ssh端口转发】或申请安装证书的目的都是为了更安全地登录面板，而至于搭建的其他流程和步骤，都是一样的；如果你已经【申请安装证书】了，并不会受到其他什么额外影响，就不用去折腾【ssh转发】了，直接用 【https://你的域名:端口/路径】 去登录你的面板管理后台就行了。
+---
 
-------------
-## 如何在〔X-Panel CE〕中去使用【一个机器人管理多面板】功能？
-#### 1、安装好〔X-Panel CE〕，进入后台，在【主从管理】界面，
-![64](./media/64.png)
-#### 2、点击【添加被控端 VPS】，按照要求填入面板登录地址，用户名和密码，备注等信息，
-![65](./media/65.png)
-#### 3、然后点击【配置本机“主控机器人”】，跳转到【机器人设置页面】，输入token令牌配置好，
-![66](./media/66.png)
-![73](./media/73.png)
-#### 4、现在重启本机 VPS，打开TG端机器人，即可看到【切换控制 VPS】等菜单，切换操作即可使用。
-![67](./media/67.png)
-![68](./media/68.png)
+## 功能特性
 
-------------
-## 如何在〔X-Panel CE〕中去使用【一键部署中转节点】的功能？
-#### 1、安装好〔X-Panel CE〕，进入后台，在【主从管理】界面，
-#### 2、点击【添加中转机 VPS】，按照要求填入面板登录地址，用户名和密码，备注等信息，
-![69](./media/69.png)
-#### 3、然后点击列表页中的【一键部署中转】，即可在后续的流程中，自动进入配置流程，
-![70](./media/70.png)
-#### 4、稍等片刻，本机配置好的话就几秒，全自动给您生成了【二维码和中转链接】，复制可用，
-![71](./media/71.png)
-#### 5、记得要去放行【本机】和【远程中转机】对应的端口，也可点击【检测中转节点】功能去看是否通？
-![72](./media/72.png)
+### 上游既有
 
-------------
-## ✰如何从其他x-ui版本迁移到〔X-Panel面板〕？✰
-#### 1、若你用的是伊朗老哥的3X-UI，是可以直接〔覆盖安装〕的，因为数据库文件等位置是没有改变的，所以直接覆盖安装，并不会影响你〔原有节点及配置〕等数据；安装命令如下：
-```
-bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh)
-```
-#### 2、若你之前用的是Docker方式安装，那先进入容器里面/命令：docker exec -it 容器id /bin/sh，再执行以上脚本命令直接【覆盖安装】即可，
-#### 3、若你用的是之前F佬的x-ui或者其他分支版本，那直接覆盖安装的话，并不能确保一定就能够兼容？建议你先去备份〔数据库〕配置文件，再进行安装〔X-Panel面板〕。
+- 系统状态查看与监控
+- 多用户、多协议、多入站
+- 流量统计、流量限制、过期时间限制
+- 可搜索所有入站和客户端信息
+- 深色 / 浅色主题切换
+- 一键 SSL 证书申请与自动续签（ACME / Cloudflare / Certbot）
+- 自定义 Xray 配置模板
+- 支持从面板导出 / 导入数据库
+- HTTPS 访问面板（自备域名 + SSL 证书）
+- IP 限制（基于 fail2ban）
+- WARP 路由（v2.1.0+ 内置）
+- Telegram 机器人通知与远程管理
 
+### CE 新增 / 重写（开源方式）
 
-------------
-## 安装之前的准备
-- 购买一台性能还不错的VPS，可通过本页底部链接购买，
-- PS：若你不想升级系统，则可以跳过此步骤。
-- 若你需要更新/升级系统，Debian系统可用如下命令：
-  ```
-  apt update
-  apt upgrade -y
-  apt dist-upgrade -y
-  apt autoclean
-  apt autoremove -y
-  ```
-- 查看系统当前版本：
-  ```
-  cat /etc/debian_version
-  ```
-- 查看内核版本：
-  ```
-  uname -r
-  ```
-- 列出所有内核：
-  ```
-  dpkg --list | grep linux-image
-  ```
-- 更新完成后执行重新引导：
-  ```
-  update-grub
-  ```
-- 完成以上步骤之后输入reboot重启系统
+完整路线图与每条任务的实现细节见 [`docs/ROADMAP.md`](./docs/ROADMAP.md)。本次发布已落地的核心条目：
 
-------------
-## 【搬瓦工】重装/升级系统之后SSH连不上如何解决？
-- 【搬瓦工】重装/升级系统会恢复默认22端口，如果需要修改SSH的端口号，您需要进行以下步骤：
-- 以管理员身份使用默认22端口登录到SSH服务器
-- 打开SSH服务器的配置文件进行编辑，SSH配置文件通常位于/etc/ssh/sshd_config
-- 找到"Port"选项，并将其更改为您想要的端口号
-- Port <新端口号>，请将<新端口号>替换为您想要使用的端口号
-- 保存文件并退出编辑器
-- 重启服务器以使更改生效
+| 类别 | 已实现功能 |
+|---|---|
+| 安装脚本 | webssh 一键部署、线路 / IP 质量检测、地区 DNS 检测、内核深度调优（BBR + FQ + TCP Fast Open + 缓冲区，支持 dry-run / backup / apply / rollback） |
+| 面板 UI | 5 套配色主题（标准 / 炫彩 / 深海 / 暮光 / 幽林），首选项 `localStorage` 持久化 |
+| Reality | "随机偷域"按钮（内置 10 个候选 SNI 候选池） |
+| 流量管理 | 客户端流量自动周期重置（每日 / 每周 / 每月任意 1–31 号，月底 fallback） |
+| 批量部署 | 一键批量生成 VLESS + TCP + Reality + Vision 入站（端口冲突检测 + 失败补偿回滚） |
+| Telegram 机器人 | `/checkupdate` 读取 CE Release Notes、`/selfcheck` 部署自检、`/getlinks` 列出本机入站节点、`/webssh` 对接 webssh 服务、入站上 / 下线通知钩子、每日报告内容可定制（开关 / 时间 / 频率） |
+| 安全治理 | 移除上游硬编码 Telegram 中央上报后门、移除商业授权机制（HWID 采集 / 远程授权服务器调用 / 购买入口） |
 
-------------
-## 安装 & 升级
-- 使用〔X-Panel面板〕脚本一般情况下，安装完成创建入站之后，端口是默认关闭的，所以必须进入脚本选择【22】去放行端口
-- 要使用【自动续签】证书功能，也必须放行【80】端口，保持80端口是打开的，才会每3个月自动续签一次
+> 路线图中归属 Stage 5（多面板管理 / 一键中转部署 / 数据快照）的三项跨机功能为**长期项目**，需要新建 Server 表与 SSH 远程执行框架，CE 当前未立项；前端入口保留并显示中性提示。
+> 路线图中 Stage 6（授权验证）已**完全移除**，CE 永久承诺零遥测。
 
-- 【全新安装】请执行以下脚本：
-```
-bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh)
-```
-#### 如果执行了上面的代码但是报错，证明你的系统里面没有curl这个软件，请执行以下命令先安装curl软件，安装curl之后再去执行上面代码，
-```
-apt update -y&&apt install -y curl&&apt install -y socat
-```
+---
 
-- 若要对版本进行升级，可直接通过脚本选择【2】，如下图：
-![8](./media/8.png)
-![10](./media/10.png)
-- 在到这一步必须要注意：要保留旧设置的话，需要输入【n】
-![11](./media/11.png)
-
-
-## 安装指定版本
-
-若要安装指定的版本，请使用以下安装命令。 e.g., ver `v26.2.15`:
-
-```
-VERSION=v26.2.15 && bash <(curl -Ls "https://raw.githubusercontent.com/hehelove/x-panel-ce/$VERSION/install.sh") $VERSION
-```
-------------
-## 若你的VPS默认有防火墙，请在安装完成之后放行指定端口
-- 放行【面板登录端口】
-- 放行出入站管理协议端口
-- 如果要申请安装证书并每3个月【自动续签】证书，请确保80和443端口是放行打开的
-- 可通过此脚本的第【21】选项去安装防火墙进行管理，如下图：
-![9](./media/9.png)
-- 若要一次性放行多个端口或一整个段的端口，用英文逗号隔开。
-#### PS：若你的VPS没有防火墙，则所有端口都是能够ping通的，可自行选择是否进入脚本安装防火墙保证安全，但安装了防火墙必须放行相应端口。
-
-------------
-## 如何在〔X-Panel面板〕中使用简单快捷的【一键配置】生成功能？
-#### 1、进入后台，并且你已经【安装了证书】，可在【添加入站】处看到，
-![53](./media/53.png)
-#### 2、点击【一键配置】，在弹出的页面中【按需选择】去生成协议配置即可，
-![54](./media/54.png)
-#### 3、直接复制【链接】，导入软件；若后台出现【醒目提示】，那就手动放行【相应端口】，
-![55](./media/55.png)
-#### 4、若你是用【TG端电报机器人】的【一键配置】生成功能，那直接点击就用，
-![56](./media/56.png)
-#### 5、选择好自己想要【一键创建】的协议组合类型，点击之后稍作等待，
-![57](./media/57.png)
-#### 6、TG端【一键配置】创建成功之后，二维码和链接地址机器人会发送给你，如下：
-![58](./media/58.png)
-
-------------
-## 如何在〔X-Panel 项目〕中进行【抽奖游戏】赢奖品？
-#### 1、必须绑定好【TG端机器人】，怎么绑定？去看下面“绑定机器人”那部分教程，
-#### 2、在【TG端】直接点击【娱乐抽奖】菜单，就会弹出【每日幸运】抽奖游戏，
-![59](./media/59.png)
-#### 3、点击【进行抽奖】，就可“全凭手气”得到随机的抽奖结果，如下图所示，
-![60](./media/60.png)
-#### 4、在你【中奖】之后，截完整的“中奖页面”图片给交流群内管理员，即可兑奖。
-![61](./media/61.png)
-
-------------
-## 安装证书开启https方式实现域名登录访问管理面板/----->>偷自己
-#### PS：如果不需要以上功能或无域名，可以跳过这步；建议申请证书，
-##### 1、把自己的域名托管到CF，并解析到自己VPS的IP，不要开启【小云朵】，
-##### 2、如果要申请安装证书并每3个月【自动续签】证书，请确保80和443端口是放行打开的，
-##### 3、输入x-ui命令进入面板管理脚本，通过选择第【18】选项去进行安装，若使用 18 ---> 1方式不能申请下来，那就用 18--->5 备用方式去申请，或者也可用【19选项】去申请，
-![74](./media/74.png)
-##### 4、首先输入解析好的【域名】进行验证，然后可以默认用【80端口】，直接回车申请，
-![27](./media/27.png)
-##### 5、进入后台【面板设置】—–>【常规】中，会看到脚本已经自动填好了证书公钥、私钥路径，
-##### 6、点击左上角的【保存】和【重启面板】，即可用自己域名进行登录管理；也可按照后续方法实现【自己偷自己】。
-
-------------
-## 登录面板进行【常规】设置
-### 特别是如果在安装过程中，全部都是默认【回车键】安装的话，用户名/密码/访问路径是随机的，而面板监听端口默认是：13688，可自行进入面板更改，
-##### 1、填写自己想要设置的【面板监听端口】，并去登录SSH放行，
-##### 2、更改自己想要设置的【面板登录访问路径】，后续加上路径登录访问，
-![25](./media/25.png)
-##### 3、其他：安全设定和电报机器人等配置，可自行根据需求去进行设置，
-##### 4、强烈建议配置电报机器人，使用【TG端】可方便远程接管 VPS 服务器，
-![26](./media/26.png)
-##### 5、面板设置【改动保存】之后，都需要点击左上角【重启面板】，才能生效。
-#### PS：若你在正确完成了上述步骤之后，你没有安装证书的情况下，去用【ssh转发】的方式却不能访问面板，那请检查一下是不是你的浏览器自动默认开启了https模式，需要手动调整一下改成http方式，把“s”去掉，即可访问成功；或查看一下是不是对应的端口被占用？
-
-------------
-## 创建【入站协议】和添加【客户端】，并测试上网
-##### 1、点击左边【入站列表】，然后【添加入站】，传输方式保持【TCP】不变，尽量选择主流的vless+reality+vision协议组合，
-![23](./media/23.png)
-##### 2、在选择reality安全选项时，偷的域名可以使用默认的，要使用其他的，请替换尽量保持一致就行，比如Apple、Yahoo，VPS所在地区的旅游、学校网站等；如果要实现【偷自己】，请参看后续【如何偷自己】的说明部分；而私钥/公钥部分，可以直接点击下方的【Get New Cert】获取一个随机的，
-##### 3、在创建reality安全选项过程中，至于其他诸如：PROXY Protocol，HTTP 伪装，TPROXY，External Proxy等等选项，若无特殊要求，保持默认设置即可，不用去动它们，
-![24](./media/24.png)
-##### 4、创建好入站协议之后，默认只有一个客户端，可根据自己需求继续添加；重点：并编辑客户端，选择【Flow流控】为xtls-rprx-vision，
-![19](./media/19.png)
-##### 5、其他：流量限制，到期时间，客户TG的ID等选项根据自己需求填写，
-![4](./media/4.png)
-##### 6、一定要放行端口之后，确保端口能够ping通，再导入软件，
-##### 7、点击二维码或者复制链接导入到v2rayN等软件中进行测试。
-
-------------
-## 备份与恢复/迁移数据库（以Debian系统为例）
-#### 一、备份：通过配置好电报管理机器人，可点击管理机器人的“相应菜单按钮”获取【备份配置】文件，有x-ui.db和config.json两个文件，可自行下载保存到自己电脑里面，
-![14](./media/14.png)
-#### 二、搭建：在新的VPS中全新安装好〔X-Panel面板〕，通过脚本放行之前配置的所有端口，一次性放行多个端口请用【英文逗号】分隔，
-#### 三、若需要安装证书，则提前把域名解析到新的VPS对应的IP，并且去输入x-ui选择第【18】选项去安装，并记录公钥/私钥的路径，无域名则跳过这一步，
-#### 四、恢复：SSH登录服务器找到/etc/x-ui/x-ui.db和/usr/local/x-ui/bin/config.json文件位置，上传之前的两个备份文件，进行覆盖，
-![12](./media/12.png)
-##### PS：把之前通过自动备份下载得到的两个文件上传覆盖掉旧文件，重启〔X-Panel面板〕即可【迁移成功】；即使迁移过程中出现问题，你是有备份文件的，不用担心，多试几次。
-![13](./media/13.png)
-#### 五、若安装了证书，去核对/更改一下证书的路径，一般是同一个域名的话，位置在：/root/cert/域名/fullchain.pem，路径是相同的就不用更改，
-#### 六、重启面板/重启服务器，让上述步骤生效即可，这时可以看到所有配置都是之前自己常用的，包括面板用户名、密码，入站、客户端，电报机器人配置等。
-#### PS：若您使用的是【CE】，则可直接使用：“创建数据快照 + 远程急救还原”功能，对面板数据库和配置文件进行操作。
-
-------------
-## 安装完成后如何设置调整成【中文界面】？
-- 方法一：通过管理后台【登录页面】调整，登录时可以选择，如下图：
-![15](./media/15.png)
-- 方法二：通过在管理后台-->【面板设置】中去选择设置，如下图：
-![16](./media/16.png)
-- 【TG机器人】设置中文：通过在管理后台-->【面板设置】-->【机器人配置】中去选择设置，并建议打开数据库备份和登录通知，如下图：
-![17](./media/17.png)
-
-------------
-## 用〔X-Panel面板〕如何实现【自己偷自己】？
-- 其实很简单，只要你为面板设置了证书，
-- 开启了HTTPS登录，就可以将〔X-Panel面板〕自身作为Web Server，
-- 无需Nginx等，这里给一个示例：
-- 其中目标网站（Dest）请填写面板监听端口，
-- 可选域名（SNI）填写面板登录域名，
-- 如果您使用其他web server（如nginx）等，
-- 将目标网站改为对应监听端口也可。
-- 需要说明的是，如果您处于白名单地区，自己“偷”自己并不适合你；
-- 其次，可选域名一项实际上可以填写任意SNI，只要客户端保持一致即可，不过并不推荐这样做。
-- 配置方法如下图所示：
-![18](./media/18.png)
-
-------------
-## 〔子域名〕被墙针对特征
-#### 网络表现：
-##### 1、可以Ping通域名和IP地址，
-##### 2、子域名无法打开〔X-Panel面板〕管理界面，
-##### 3、什么都正常就是不能上网；
-
-#### 问题：
-##### 你的子域名被墙针对了：无法上网！
-
-#### 解决方案：
-##### 1、更换为新的子域名，
-##### 2、解析新的子域名到VPS的IP，
-##### 3、重新去安装新证书，
-##### 4、重启〔X-Panel面板〕和服务器，
-##### 5、重新去获取链接并测试上网。
-#### PS：若通过以上步骤还是不能正常上网，则重装VPS服务器OS系统，以及〔X-Panel面板〕全部重新安装，之后就正常了！
-
-------------
-## 用〔X-Panel面板〕如何开启【设备限制】功能？
-##### 1、进入后台在【添加入站】的时候，弹出来的页面就能有【设备数量】输入框，
-![37](./media/37.png)
-##### 2、通过步骤1设置完成后，在后台的【入站列表】页面也有对应的同步数据显示。
-![38](./media/38.png)
-##### 3、具体要查看【设备限制】功能的封禁情况，就进入〔X-Panel面板〕后台用日志查看。
-![39](./media/39.png)
-##### 4、以下图片里面，详细阐述了我们的〔设备限制〕功能，跟3X-UI原本就有的〔IP Limit〕之间的区别对比。
-![40](./media/40.png)
-
-------------
-## 用〔X-Panel面板〕如何开启【独立限速】功能？
-##### 1、进入后台在【添加入站】的时候，弹出来的页面在【客户/用户】那里就能输入具体数字，
-![47](./media/47.png)
-##### 2、也可以在添加好一个【入站】之后，点击【添加客户端】去找到【独立限速】输入框，
-![48](./media/48.png)
-##### 3、当你想批量一次性创建多个【客户/用户】时，同样可以使用【独立限速】功能，
-![49](./media/49.png)
-![50](./media/50.png)
-##### 4、若后期你想更改某一个【客户端/用户】的限制速率，那就自己先找到，然后点击【编辑】即可，
-![51](./media/51.png)
-##### 5、具体要查看【独立限速】功能的启用情况，就进入〔X-Panel面板〕后台用日志查看。
-![52](./media/52.png)
-
-------------
-## 用〔X-Panel面板〕如何开启【每月流量自动重置】？
-##### 1、进入后台的【入站列表】，选择需要设置的【客户端】，
-![29](./media/29.png)
-##### 2、要注意是编辑【入站】下面的【客户端】，才会有效果，
-##### 2、并不是编辑【入站】，所以不要弄错对象，如下图所示：
-![28](./media/28.png)
-
-
-------------
-## 在自己的VPS服务器部署【订阅转换】功能
-### 如何把vless/vmess等协议转换成Clash/Surge等软件支持的格式？
-##### 1、进入脚本输入x-ui命令调取面板，选择第【25】选项安装订阅转换模块，
-##### 2、等待安装【订阅转换】成功之后，访问地址：https://你的域名:15268 ，
-![41](./media/41.png)
-##### 3、因为在转换过程中需要调取后端API，所以请确保端口 8000 和 15268 是打开放行的，
-##### 4、直接复制脚本中提供的【登录地址】，进入后台，点击【节点列表】，如下图：
-![42](./media/42.png)
-##### 5、接下来点击左边侧边栏的【订阅列表】去【添加订阅】，按照下图中去操作，
-![43](./media/43.png)
-##### 6、最后一步，点击【客户端】，即可导入Clash等软件中使用。
-![44](./media/44.png)
-![45](./media/45.png)
-
-------------
-## 常见的翻墙软件/工具：
-- [1、Windows系统v2rayN：https://github.com/2dust/v2rayN](https://github.com/2dust/v2rayN)
-- [2、安卓手机版【v2rayNG】：https://github.com/2dust/v2rayNG](https://github.com/2dust/v2rayNG)
-- [3、苹果手机IOS【小火箭】：https://apple02.com/（自己购买）](https://apple02.com/)
-- [4、苹果MacOS电脑【Clash Verge】：https://github.com/clash-verge-rev/clash-verge-rev/releases](https://github.com/clash-verge-rev/clash-verge-rev/releases)
-  [或v2rayN：https://github.com/2dust/v2rayN](https://github.com/2dust/v2rayN)
-
-------------
-## 如何保护自己的IP不被墙被封？
-##### 1、使用的代理协议要安全，加密是必备，推荐使用vless+reality+vision协议组合，
-##### 2、因为有时节点会共享，在不同的地区，多个省份之间不要共同连接同一个IP，
-##### 3、连接同一个IP就算了，不要同一个端口，不要同IP+同端口到处漫游，要分开，
-##### 4、同一台VPS，不要在一天内一直大流量去下载东西使用，不要流量过高要切换，
-##### 5、创建【入站协议】的时候，尽量用【高位端口】，比如40000--65000之间的端口号。
-#### 提醒：为什么在特殊时期，比如：两会，春节等被封得最严重最惨？
-##### 尼玛同一个IP+同一个端口号，多个省份去漫游，跟开飞机场一样！不封你，封谁的IP和端口？
-#### 总结：不要多终端/多省份/多个朋友/共同使用同一个IP和端口号！使用〔X-Panel面板〕多创建几个【入站】，
-####      多做几条备用，各用各的！各行其道才比较安全！GFW的思维模式是干掉机场，机场的特征个人用户不要去沾染，自然IP就保护好了。
-
-------------
-## SSL 认证
-
-<details>
-  <summary>点击查看 SSL 认证</summary>
-
-### ACME
-
-要使用 ACME 管理 SSL 证书：
-
-1. 确保您的域名已正确解析到服务器，
-2. 输入“x-ui”命令并选择“SSL 证书管理”，
-3. 您将看到以下选项：
-
-   - **获取证书** ----获取SSL证书
-   - **吊销证书** ----吊销现有的SSL证书
-   - **续签证书** ----强制续签SSL证书
-   - **显示所有证书** ----显示服务器中所有能用的证书
-   - **设置面板证书路径** ----指定面板要使用的证书
-
-
-### Certbot
-
-安装和使用 Certbot：
+## 快速安装
 
 ```sh
-apt-get install certbot -y
-certbot certonly --standalone --agree-tos --register-unsafely-without-email -d yourdomain.com
-certbot renew --dry-run
+bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh)
 ```
 
-### Cloudflare
+如果系统未安装 `curl`：
 
-管理脚本具有用于 Cloudflare 的内置 SSL 证书应用程序。若要使用此脚本申请证书，需要满足以下条件：
+```sh
+apt update -y && apt install -y curl socat
+```
 
-- Cloudflare 邮箱地址
-- Cloudflare Global API Key
-- 域名已通过 cloudflare 解析到当前服务器
+### 安装指定版本
 
-**如何获取 Cloudflare全局API密钥:**
+```sh
+VERSION=v26.2.15 && bash <(curl -Ls "https://raw.githubusercontent.com/hehelove/x-panel-ce/$VERSION/install.sh") $VERSION
+```
 
-1. 在终端中输入“x-ui”命令，然后选择“CF SSL 证书”。
-2. 访问链接: [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens).
-3. 点击“查看全局 API 密钥”（如下图所示）：
-   ![](media/APIKey1.PNG)
-4. 您可能需要重新验证您的帐户。之后，将显示 API 密钥（请参见下面的屏幕截图）：
-   ![](media/APIKey2.png)
+### 升级
 
-使用时，只需输入您的“域名”、“电子邮件”和“API KEY”即可。示意图如下：
-   ![](media/DetailEnter.png)
+进入 `x-ui` 命令行菜单，选择 **2. 更新面板**。如需保留旧设置，提示时输入 `n`。
 
+### 从其他 x-ui 分支迁移
+
+`x-panel-ce` 与上游 X-Panel / 3X-UI 数据库路径一致（`/etc/x-ui/x-ui.db`），通常可直接覆盖安装；若使用 F 佬 `x-ui` 或更早分支，请先备份数据库再安装。
+
+---
+
+## 默认面板设置
+
+| 项 | 值 |
+|---|---|
+| 端口 | `13688`（可在面板内修改） |
+| 用户名 / 密码 / 访问路径 | 默认安装时随机生成（也可在安装时自定义） |
+| 数据库路径 | `/etc/x-ui/x-ui.db` |
+| Xray 配置路径 | `/usr/local/x-ui/bin/config.json` |
+| 面板访问 URL（HTTPS） | `https://你的域名:13688/访问路径/panel` |
+
+---
+
+## 安全建议
+
+1. **不要**用 `http://` 明文模式登录面板，明文会造成密码与节点信息泄露。
+2. 二选一加密登录方式：
+   - **推荐**：申请 SSL 证书（脚本菜单 18），用 `https://域名/路径/panel` 登录。
+   - **备选**：本地 `ssh -L` 端口转发，再用 `http://127.0.0.1:本地端口/路径/panel` 登录。
+3. 首次登录后修改默认用户名 / 密码 / 访问路径。
+4. 创建入站时使用高位端口（建议 `40000–65000`），避免低位常见端口被探测。
+5. 同 IP + 同端口不要在多省份 / 多终端同时使用，避免被 GFW 视为机场流量特征。
+
+---
+
+## SSL 证书
+
+进入 `x-ui` 命令行菜单，选择 **18. 申请 SSL 证书**：
+
+- 子选项 1：常规 ACME 模式（HTTP-01，需 80 端口放行）
+- 子选项 5：备用模式（常规失败时尝试）
+- 子菜单包含：获取证书 / 吊销证书 / 续签证书 / 显示所有证书 / 设置面板证书路径
+- 支持 Cloudflare DNS-01（需 CF 邮箱 + Global API Key）
+- 自定义证书路径：手动上传到 VPS 后填路径
+
+证书默认每 3 个月自动续签一次，需保证 80 端口持续放行。
+
+---
+
+## Telegram 机器人
+
+通过 `@BotFather` 创建机器人获得 Token，然后在面板 → 设置 → Telegram 机器人配置中填入：
+
+| 字段 | 说明 |
+|---|---|
+| Token | `@BotFather` `/newbot` 返回的字符串 |
+| Admin Chat ID | 自己的 TG 用户 ID（向 [@useridinfobot](https://t.me/useridinfobot) 发任意消息可获取） |
+| 通知 Cron | 标准 cron 表达式（如 `@daily`、`@hourly`、`30 * * * * *`） |
+
+### 机器人功能
+
+- 定期报告（流量 / CPU / 阈值 / 到期时间）
+- 登录通知
+- 数据库备份（自动 + 按需 `/createbackup`）
+- 客户端报告菜单（按 UUID / 密码 / Email 查询）
+- `/checkupdate` 查看 CE 最新版本与变更
+- `/selfcheck` 部署自检（无需联网授权服务器）
+- `/getlinks` 列出本机所有入站的节点链接
+- `/webssh` 对接面板 webssh 服务
+- 入站上 / 下线通知钩子（拼车场景明确知道节点状态）
+- 多语言菜单
+
+---
+
+## 操作系统支持
+
+Ubuntu 20.04+、Debian 11+、CentOS 8+、AlmaLinux 8+、Rocky Linux 8+、Oracle Linux 8+、Fedora 36+、OpenEuler 22.03+、Arch Linux、Manjaro、Armbian、OpenSUSE Tumbleweed、Amazon Linux 2023。
+
+## 架构支持
+
+`amd64` / `x86 / i386` / `arm64 / armv8 / aarch64` / `armv7` / `armv6` / `armv5` / `s390x`
+
+二进制由 GitHub Actions 自动构建并发布到 Releases 与 GHCR。
+
+---
+
+## 多语言支持
+
+英语、波斯语、简体中文、繁体中文、俄语、越南语、西班牙语、印尼语、乌克兰语、土耳其语、葡萄牙语。
+
+进入面板登录页或后台 → 设置切换语言。Telegram 机器人语言独立设置（面板设置 → 机器人配置）。
+
+---
+
+## API
+
+`POST /login` 用 `{username, password}` 登录后，所有入站操作都在 `/panel/api/inbounds/` 下。完整路由表（节选）：
+
+| 方法 | 路径 | 操作 |
+|---|---|---|
+| `GET` | `/list` | 获取所有入站 |
+| `GET` | `/get/:id` | 获取单条入站 |
+| `GET` | `/getClientTraffics/:email` | 按 email 查询客户端流量 |
+| `GET` | `/getClientTrafficsById/:id` | 按 ID 查询客户端流量 |
+| `GET` | `/createbackup` | 让 TG bot 给管理员发备份 |
+| `POST` | `/add` | 添加入站 |
+| `POST` | `/del/:id` | 删除入站 |
+| `POST` | `/update/:id` | 更新入站 |
+| `POST` | `/addClient` | 给入站添加客户端 |
+| `POST` | `/:id/delClient/:clientId` | 删除客户端 |
+| `POST` | `/updateClient/:clientId` | 更新客户端 |
+| `POST` | `/:id/resetClientTraffic/:email` | 重置单客户端流量 |
+| `POST` | `/resetAllTraffics` | 重置所有入站流量 |
+| `POST` | `/resetAllClientTraffics/:id` | 重置入站下所有客户端流量 |
+| `POST` | `/delDepletedClients/:id` | 删除入站耗尽的客户端（`-1` = all） |
+| `POST` | `/onlines` | 获取在线 email 列表 |
+| `POST` | `/ce/quickDeployReality` | **CE 新增**：批量部署 Reality 入站 |
+
+`clientId` 字段：VMESS / VLESS 用 `client.id`，TROJAN 用 `client.password`，Shadowsocks 用 `client.email`。
+
+---
+
+## 环境变量
+
+| 变量 | 类型 | 默认值 |
+|---|---|---|
+| `XUI_LOG_LEVEL` | `debug` / `info` / `warn` / `error` | `info` |
+| `XUI_DEBUG` | `boolean` | `false` |
+| `XUI_BIN_FOLDER` | `string` | `bin` |
+| `XUI_DB_FOLDER` | `string` | `/etc/x-ui` |
+| `XUI_LOG_FOLDER` | `string` | `/var/log` |
+
+示例：
+
+```sh
+XUI_BIN_FOLDER="bin" XUI_DB_FOLDER="/etc/x-ui" go build main.go
+```
+
+---
+
+## Docker 安装
+
+<details>
+<summary>展开</summary>
+
+```sh
+bash <(curl -sSL https://get.docker.com)
+
+git clone https://github.com/hehelove/x-panel-ce.git
+cd x-panel-ce
+docker compose up -d
+```
+
+或不用 compose：
+
+```sh
+docker run -itd \
+   -e XRAY_VMESS_AEAD_FORCED=false \
+   -v $PWD/db/:/etc/x-ui/ \
+   -v $PWD/cert/:/root/cert/ \
+   --network=host \
+   --restart=unless-stopped \
+   --name x-panel-ce \
+   ghcr.io/hehelove/x-panel-ce:latest
+```
+
+升级：
+
+```sh
+cd x-panel-ce
+docker compose down
+docker compose pull
+docker compose up -d
+```
+
+卸载容器：
+
+```sh
+docker stop x-panel-ce && docker rm x-panel-ce
+```
 
 </details>
 
-------------
-## 手动安装 & 升级
+---
+
+## 手动安装
 
 <details>
-  <summary>点击查看 手动安装 & 升级</summary>
-
-#### 使用
-
-1. 若要将最新版本的压缩包直接下载到服务器，请运行以下命令：
+<summary>展开</summary>
 
 ```sh
 ARCH=$(uname -m)
@@ -468,25 +291,8 @@ case "${ARCH}" in
   s390x) echo 's390x' ;;
   *) XUI_ARCH="amd64" ;;
 esac
-
 
 wget https://github.com/hehelove/x-panel-ce/releases/latest/download/x-ui-linux-${XUI_ARCH}.tar.gz
-```
-
-2. 下载压缩包后，执行以下命令安装或升级 x-ui：
-
-```sh
-ARCH=$(uname -m)
-case "${ARCH}" in
-  x86_64 | x64 | amd64) XUI_ARCH="amd64" ;;
-  i*86 | x86) XUI_ARCH="386" ;;
-  armv8* | armv8 | arm64 | aarch64) XUI_ARCH="arm64" ;;
-  armv7* | armv7) XUI_ARCH="armv7" ;;
-  armv6* | armv6) XUI_ARCH="armv6" ;;
-  armv5* | armv5) XUI_ARCH="armv5" ;;
-  s390x) echo 's390x' ;;
-  *) XUI_ARCH="amd64" ;;
-esac
 
 cd /root/
 rm -rf x-ui/ /usr/local/x-ui/ /usr/bin/x-ui
@@ -502,395 +308,50 @@ systemctl restart x-ui
 
 </details>
 
-------------
-## 通过Docker安装
+---
 
-<details>
-  <summary>点击查看 通过Docker安装</summary>
+## 备份与恢复
 
-#### 使用
+通过面板设置好 Telegram 机器人，可点击对应菜单获取 `x-ui.db` 与 `config.json` 两个备份文件。在新 VPS 安装本面板后，将这两个文件分别覆盖到 `/etc/x-ui/x-ui.db` 与 `/usr/local/x-ui/bin/config.json`，重启面板即可完成迁移。证书路径如果域名一致通常无需调整。
 
+---
 
-1. **安装Docker**
+## 防火墙
 
-   ```sh
-   bash <(curl -sSL https://get.docker.com)
-   ```
+新装系统默认会拦截入站端口。请放行：
 
+- 面板登录端口（默认 `13688`，可改）
+- 出 / 入站协议使用的端口
+- 申请 SSL 证书 + 自动续签：必须放行 `80` 与 `443`
 
-2. **克隆项目仓库**
+`x-ui` 命令行菜单第 21 选项可一键安装防火墙规则模板（`ufw` / `firewalld`）。
 
-   ```sh
-   git clone https://github.com/hehelove/x-panel-ce.git
-   cd x-panel
-   ```
+---
 
-3. **启动服务**：
+## 反馈与贡献
 
-   ```sh
-   docker compose up -d
-   ```
+- Issues / Pull Requests：<https://github.com/hehelove/x-panel-ce/issues>
+- 本项目接受任何符合 GPL-3.0 条款的开源贡献。
 
-   添加 ```--pull always``` 标志使 docker 在拉取更新的镜像时自动重新创建容器。有关更多信息，请参阅：https://docs.docker.com/reference/cli/docker/container/run/#pull
+---
 
-   **或**
-
-   ```sh
-   docker run -itd \
-      -e XRAY_VMESS_AEAD_FORCED=false \
-      -v $PWD/db/:/etc/x-ui/ \
-      -v $PWD/cert/:/root/cert/ \
-      --network=host \
-      --restart=unless-stopped \
-      --name x-panel \
-      ghcr.io/hehelove/x-panel-ce:latest
-   ```
-
-4. **更新至最新版本**
-
-   ```sh
-   cd x-panel
-   docker compose down
-   docker compose pull x-panel
-   docker compose up -d
-   ```
-
-5. **从Docker中删除x-panel **
-
-   ```sh
-   docker stop x-panel
-   docker rm x-panel
-   cd --
-   rm -r x-panel
-   ```
-
-</details>
-
-------------
-## 建议使用的操作系统
-
-- Ubuntu 20.04+
-- Debian 11+
-- CentOS 8+
-- OpenEuler 22.03+
-- Fedora 36+
-- Arch Linux
-- Manjaro
-- Armbian
-- AlmaLinux 8.0+
-- Rocky Linux 8+
-- Oracle Linux 8+
-- OpenSUSE Tubleweed
-- Amazon Linux 2023
-
-------------
-## 支持的架构和设备
-<details>
-  <summary>点击查看 支持的架构和设备</summary>
-
-我们的平台提供与各种架构和设备的兼容性，确保在各种计算环境中的灵活性。以下是我们支持的关键架构：
-
-- **amd64**: 这种流行的架构是个人计算机和服务器的标准，可以无缝地适应大多数现代操作系统。
-
-- **x86 / i386**: 这种架构在台式机和笔记本电脑中被广泛采用，得到了众多操作系统和应用程序的广泛支持，包括但不限于 Windows、macOS 和 Linux 系统。
-
-- **armv8 / arm64 / aarch64**: 这种架构专为智能手机和平板电脑等当代移动和嵌入式设备量身定制，以 Raspberry Pi 4、Raspberry Pi 3、Raspberry Pi Zero 2/Zero 2 W、Orange Pi 3 LTS 等设备为例。
-
-- **armv7 / arm / arm32**: 作为较旧的移动和嵌入式设备的架构，它仍然广泛用于Orange Pi Zero LTS、Orange Pi PC Plus、Raspberry Pi 2等设备。
-
-- **armv6 / arm / arm32**: 这种架构面向非常老旧的嵌入式设备，虽然不太普遍，但仍在使用中。Raspberry Pi 1、Raspberry Pi Zero/Zero W 等设备都依赖于这种架构。
-
-- **armv5 / arm / arm32**: 它是一种主要与早期嵌入式系统相关的旧架构，目前不太常见，但仍可能出现在早期 Raspberry Pi 版本和一些旧智能手机等传统设备中。
-</details>
-
-------------
-## Languages
-
-- English（英语）
-- Farsi（伊朗语）
-- Simplified Chinese（简体中文）
-- Traditional Chinese（繁体中文）            
-- Russian（俄语）
-- Vietnamese（越南语）
-- Spanish（西班牙语）
-- Indonesian （印度尼西亚语）
-- Ukrainian（乌克兰语）
-- Turkish（土耳其语）
-- Português (葡萄牙语)
-
-------------
-## 项目特点
-
-- 系统状态查看与监控
-- 可搜索所有入站和客户端信息
-- 深色/浅色主题随意切换
-- 支持多用户和多协议
-- 支持多种协议，包括 VMess、VLESS、Trojan、Shadowsocks、Dokodemo-door、Socks、HTTP、wireguard
-- 支持 XTLS 原生协议，包括 RPRX-Direct、Vision、REALITY
-- 流量统计、流量限制、过期时间限制
-- 可自定义的 Xray配置模板
-- 支持HTTPS访问面板（自备域名+SSL证书）
-- 支持一键式SSL证书申请和自动续签证书
-- 更多高级配置项目请参考面板去进行设定
-- 修复了 API 路由（用户设置将使用 API 创建）
-- 支持通过面板中提供的不同项目更改配置。
-- 支持从面板导出/导入数据库
-
-## 默认面板设置
-
-<details>
-
-  <summary>点击查看 默认设置</summary>
-
-  ### 默认信息
-
-- **端口** 
-    - 13688
-- **用户名 & 密码 & 访问路径** 
-    - 当您跳过设置时，这些信息会随机生成，
-    - 您也可以在安装的时候自定义访问路径。
-- **数据库文件路径：**
-  - /etc/x-ui/x-ui.db
-- **Xray 配置文件路径：**
-  - /usr/local/x-ui/bin/config.json
-- **面板链接（有SSL）：**
-  - https://你的域名:13688/访问路径/panel
-
-</details>
-
-------------
-## [WARP 配置](https://gitlab.com/fscarmen/warp)
-
-<details>
-  <summary>点击查看 WARP 配置</summary>
-
-#### 使用
-
-**对于版本 `v2.1.0` 及更高版本：**
-
-WARP 是内置的，无需额外安装；只需在面板中打开必要的配置即可。
-
-**如果要在 v2.1.0 之前使用 WARP 路由**，请按照以下步骤操作：
-
-**1.** 在 **SOCKS Proxy Mode** 模式中安装Wrap
-
-   - **Account Type (free, plus, team):** Choose the appropriate account type.
-   - **Enable/Disable WireProxy:** Toggle WireProxy on or off.
-   - **Uninstall WARP:** Remove the WARP application.
-
-**2.** 如果您已经安装了 warp，您可以使用以下命令卸载：
-
-   ```sh
-   warp u
-   ```
-
-**3.** 在面板中打开您需要的配置
-
-   配置:
-
-   - Block Ads
-   - Route Google, Netflix, Spotify, and OpenAI (ChatGPT) traffic to WARP
-   - Fix Google 403 error
-
-
-</details>
-
-------------
-## IP 限制
-
-<details>
-  <summary>点击查看 IP 限制</summary>
-
-#### 使用
-
-**注意：** 使用 IP 隧道时，IP 限制无法正常工作。
-
-- 对于 `v1.6.1`之前的版本 ：
-
-  - IP 限制 已被集成在面板中。
-
-- 对于 `v1.7.0` 以及更新的版本：
-
-  - 要使 IP 限制正常工作，您需要按照以下步骤安装 fail2ban 及其所需的文件：
-
-    1. 使用面板内置的 `x-ui` 指令
-    2. 选择 `IP Limit Management`.
-    3. 根据您的需要选择合适的选项。
-   
-  - 确保您的 Xray 配置上有 ./access.log 。在 v2.1.3 之后，我们有一个选项。
-  
-  ```sh
-    "log": {
-      "access": "./access.log",
-      "dnsLog": false,
-      "loglevel": "warning"
-    },
-    ```
-  - 您需要在Xray配置中手动设置〔访问日志〕的路径。
-
-</details>
-
-------------
-## Telegram 机器人
-
-<details>
-  <summary>点击查看 Telegram 机器人</summary>
-
-#### 使用
-
-Web 面板通过 Telegram Bot 支持每日流量、面板登录、数据库备份、系统状态、客户端信息等通知和功能。要使用机器人，您需要在面板中设置机器人相关参数，包括：
-
-- 电报令牌
-- 管理员聊天 ID
-- 通知时间（cron 语法）
-- 到期日期通知
-- 流量上限通知
-- 数据库备份
-- CPU 负载通知
-
-
-**参考：**
-
-- `30 \* \* \* \* \*` - 在每个点的 30 秒处通知
-- `0 \*/10 \* \* \* \*` - 每 10 分钟的第一秒通知
-- `@hourly` - 每小时通知
-- `@daily` - 每天通知 (00:00)
-- `@weekly` - 每周通知
-- `@every 8h` - 每8小时通知
-
-### Telegram Bot 功能
-
-- 定期报告
-- 登录通知
-- CPU 阈值通知
-- 提前报告的过期时间和流量阈值
-- 如果将客户的电报用户名添加到用户的配置中，则支持客户端报告菜单
-- 支持使用UUID（VMESS/VLESS）或密码（TROJAN）搜索报文流量报告 - 匿名
-- 基于菜单的机器人
-- 通过电子邮件搜索客户端（仅限管理员）
-- 检查所有入库
-- 检查服务器状态
-- 检查耗尽的用户
-- 根据请求和定期报告接收备份
-- 多语言机器人
-
-### 注册 Telegram bot
-
-- 与 [Botfather](https://t.me/BotFather) 对话：
-    ![Botfather](./media/botfather.png)
-  
-- 使用 /newbot 创建新机器人：你需要提供机器人名称以及用户名，注意名称中末尾要包含“bot”
-    ![创建机器人](./media/newbot.png)
-
-- 启动您刚刚创建的机器人。可以在此处找到机器人的链接。
-    ![令牌](./media/token.png)
-
-- 输入您的面板并配置 Telegram 机器人设置，如下所示：
-    ![面板设置](./media/panel-bot-config.png)
-
-在输入字段编号 3 中输入机器人令牌。
-在输入字段编号 4 中输入用户 ID。具有此 id 的 Telegram 帐户将是机器人管理员。 （您可以输入多个，只需将它们用“ ，”分开即可）
-
-- 如何获取TG ID? 使用 [bot](https://t.me/useridinfobot)， 启动机器人，它会给你 Telegram 用户 ID。
-![用户 ID](./media/user-id.png)
-
-</details>
-
-------------
-## API 路由
-
-<details>
-  <summary>点击查看 API 路由</summary>
-
-#### 使用
-
-- `/login` 使用 `POST` 用户名称 & 密码： `{username: '', password: ''}` 登录
-- `/panel/api/inbounds` 以下操作的基础：
-
-| 方法   |  路径                               | 操作                                        |
-| :----: | ---------------------------------- | ------------------------------------------- |
-| `GET`  | `"/list"`                          | 获取所有入站                                 |
-| `GET`  | `"/get/:id"`                       | 获取所有入站以及inbound.id                   |
-| `GET`  | `"/getClientTraffics/:email"`      | 通过电子邮件获取客户端流量                    |
-| `GET`  | `"/getClientTrafficsById/:id"`     | 通过用户ID获取客户端流量                      |
-| `GET`  | `"/createbackup"`                  | Telegram 机器人向管理员发送备份               |
-| `POST` | `"/add"`                           | 添加入站                                    |
-| `POST` | `"/del/:id"`                       | 删除入站                                    |
-| `POST` | `"/update/:id"`                    | 更新入站                                    |
-| `POST` | `"/clientIps/:email"`              | 客户端 IP 地址                              | 
-| `POST` | `"/clearClientIps/:email"`         | 清除客户端 IP 地址                           |
-| `POST` | `"/addClient"`                     | 将客户端添加到入站                           |
-| `POST` | `"/:id/delClient/:clientId"`       | 通过 clientId\* 删除客户端                   |
-| `POST` | `"/updateClient/:clientId"`        | 通过 clientId\* 更新客户端                   |
-| `POST` | `"/:id/resetClientTraffic/:email"` | 重置客户端的流量                             |
-| `POST` | `"/resetAllTraffics"`              | 重置所有入站的流量                           |
-| `POST` | `"/resetAllClientTraffics/:id"`    | 重置入站中所有客户端的流量                    |
-| `POST` | `"/delDepletedClients/:id"`        | 删除入站耗尽的客户端 （-1： all）             |
-| `POST` | `"/onlines"`                       | 获取在线用户 （ 电子邮件列表 ）               |
-
-- 使用`clientId` 项应该填写下列数据：
-
-- `client.id` for VMESS and VLESS
-- `client.password` for TROJAN
-- `client.email` for Shadowsocks
-
-
-
-- [API 文档](https://documenter.getpostman.com/view/16802678/2s9YkgD5jm)
-
-- [<img src="https://run.pstmn.io/button.svg" alt="Run In Postman" style="width: 128px; height: 32px;">](https://app.getpostman.com/run-collection/16802678-1a4c9270-ac77-40ed-959a-7aa56dc4a415?action=collection%2Ffork&source=rip_markdown&collection-url=entityId%3D16802678-1a4c9270-ac77-40ed-959a-7aa56dc4a415%26entityType%3Dcollection%26workspaceId%3D2cd38c01-c851-4a15-a972-f181c23359d9)
-</details>
-
-------------
-## 环境变量
-
-<details>
-  <summary>点击查看 环境变量</summary>
-
-#### Usage
-
-| 变量            |                      Type                      | 默认          |
-| -------------- | :--------------------------------------------: | :------------ |
-| XUI_LOG_LEVEL  | `"debug"` \| `"info"` \| `"warn"` \| `"error"` | `"info"`      |
-| XUI_DEBUG      |                   `boolean`                    | `false`       |
-| XUI_BIN_FOLDER |                    `string`                    | `"bin"`       |
-| XUI_DB_FOLDER  |                    `string`                    | `"/etc/x-ui"` |
-| XUI_LOG_FOLDER |                    `string`                    | `"/var/log"`  |
-
-例子：
-
-```sh
-XUI_BIN_FOLDER="bin" XUI_DB_FOLDER="/etc/x-ui" go build main.go
-```
-
-</details>
-
-------------
-## 预览
-
-![1](./media/1.png)
-![2](./media/2.png)
-![3](./media/3.png)
-![5](./media/5.png)
-![6](./media/6.png)
-![7](./media/7.png)
-
-------------
-## 特别感谢
-
-- [xeefei](https://github.com/xeefei/) — 上游 X-Panel 主要维护者
-- [MHSanaei](https://github.com/MHSanaei/)
-- [alireza0](https://github.com/alireza0/)
-- [FranzKafkaYu](https://github.com/FranzKafkaYu/)
-- [vaxilu](https://github.com/vaxilu/)
-
-------------
 ## 致谢
 
-- [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules) (License: **GPL-3.0**): _Enhanced v2ray/xray and v2ray/xray-clients routing rules with built-in Iranian domains and a focus on security and adblocking._
-- [Vietnam Adblock rules](https://github.com/vuong2023/vn-v2ray-rules) (License: **GPL-3.0**): _A hosted domain hosted in Vietnam and blocklist with the most efficiency for Vietnamese._
+本仓库代码以 [GPL-3.0](./LICENSE) 协议发布。在此向以下上游项目维护者致谢，他们的工作是 x-panel-ce 的基础：
 
-------------
+- [xeefei](https://github.com/xeefei/) — 上游 X-Panel 主要维护者
+- [MHSanaei](https://github.com/MHSanaei/) — 3x-ui 维护者
+- [alireza0](https://github.com/alireza0/)
+- [FranzKafkaYu](https://github.com/FranzKafkaYu/)
+- [vaxilu](https://github.com/vaxilu/) — 早期 x-ui 项目
+
+路由规则数据集致谢：
+
+- [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules)（GPL-3.0）
+- [Vietnam Adblock rules](https://github.com/vuong2023/vn-v2ray-rules)（GPL-3.0）
+
+---
+
 ## Star 趋势
 
 [![Stargazers over time](https://starchart.cc/hehelove/x-panel-ce.svg)](https://starchart.cc/hehelove/x-panel-ce)
