@@ -172,21 +172,6 @@
 
 [pages.inbounds]
 "realityRandomDestDesc" = "點擊閃電圖示從 CE 內建候選池隨機選一個 Reality 偷取域名（同時填入 Target 與 SNI）"
-
-[pages.inbounds.ceQuickDeploy]
-"title" = "批次部署 Reality（CE）"
-"headline" = "VLESS+TCP+Reality+Vision · 全成或全無"
-"desc" = "從指定起始連接埠掃描連續閒置埠；任一條失敗將自動回滾已建條目。每條入站獨立 X25519 keypair；目標網域留空使用 tesla.com 預設值，可點閃電圖示隨機。"
-"count" = "數量"
-"portStart" = "連接埠起點"
-"remarkPrefix" = "備註前綴"
-"target" = "Reality Target"
-"serverNames" = "Reality SNI"
-"submit" = "立即部署"
-"successPrefix" = "成功部署條數:"
-"successDeployed" = "條 Reality 入站已部署"
-"deployedPorts" = "已使用連接埠:"
-"roadmapLink" = "查看路線圖（docs/ROADMAP.md）"
 "resetCycle" = "流量重置週期"
 "resetCycleDesc" = "面板每日 0:00 自動按週期清零客戶端流量；不重啟 Xray、不影響在線連接"
 "resetCycleNever" = "從不"
@@ -287,6 +272,21 @@
 "oneClickConfig"="一鍵配置"
 "is_subConversion"="訂閱轉換"
 "confirmCreate"="確認提交創建"
+
+[pages.inbounds.ceQuickDeploy]
+"title" = "批次部署 Reality（CE）"
+"headline" = "VLESS+TCP+Reality+Vision · 全成或全無"
+"desc" = "從指定起始連接埠掃描連續閒置埠；任一條失敗將自動回滾已建條目。每條入站獨立 X25519 keypair；目標網域留空使用 tesla.com 預設值，可點閃電圖示隨機。"
+"count" = "數量"
+"portStart" = "連接埠起點"
+"remarkPrefix" = "備註前綴"
+"target" = "Reality Target"
+"serverNames" = "Reality SNI"
+"submit" = "立即部署"
+"successPrefix" = "成功部署條數:"
+"successDeployed" = "條 Reality 入站已部署"
+"deployedPorts" = "已使用連接埠:"
+"roadmapLink" = "查看路線圖（docs/ROADMAP.md）"
 
 [pages.client]
 "add" = "新增客戶端"

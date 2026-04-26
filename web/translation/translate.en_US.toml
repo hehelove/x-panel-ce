@@ -170,21 +170,6 @@
 
 [pages.inbounds]
 "realityRandomDestDesc" = "Click the lightning icon to randomly pick a Reality steal-domain from the CE built-in candidate pool (fills both Target and SNI)."
-
-[pages.inbounds.ceQuickDeploy]
-"title" = "Bulk deploy Reality (CE)"
-"headline" = "VLESS+TCP+Reality+Vision · all-or-nothing"
-"desc" = "Scans consecutive free ports starting from the chosen port; any failure rolls back already-created entries. Each inbound gets its own X25519 keypair; leave Target blank to use the tesla.com default or click the lightning icon to pick one at random."
-"count" = "Count"
-"portStart" = "Port start"
-"remarkPrefix" = "Remark prefix"
-"target" = "Reality Target"
-"serverNames" = "Reality SNI"
-"submit" = "Deploy"
-"successPrefix" = "Successfully deployed:"
-"successDeployed" = "Reality inbound(s) deployed"
-"deployedPorts" = "Used ports:"
-"roadmapLink" = "View roadmap (docs/ROADMAP.md)"
 "resetCycle" = "Reset Cycle"
 "resetCycleDesc" = "Daily 0:00 cron auto-resets client traffic counters per the chosen cycle; no Xray restart, no impact on live connections."
 "resetCycleNever" = "Never"
@@ -283,6 +268,21 @@
 "oneClickConfig"="One-click configuration"
 "is_subConversion"="Subscription Conversion"
 "confirmCreate"="Confirm submission creation"
+
+[pages.inbounds.ceQuickDeploy]
+"title" = "Bulk deploy Reality (CE)"
+"headline" = "VLESS+TCP+Reality+Vision · all-or-nothing"
+"desc" = "Scans consecutive free ports starting from the chosen port; any failure rolls back already-created entries. Each inbound gets its own X25519 keypair; leave Target blank to use the tesla.com default or click the lightning icon to pick one at random."
+"count" = "Count"
+"portStart" = "Port start"
+"remarkPrefix" = "Remark prefix"
+"target" = "Reality Target"
+"serverNames" = "Reality SNI"
+"submit" = "Deploy"
+"successPrefix" = "Successfully deployed:"
+"successDeployed" = "Reality inbound(s) deployed"
+"deployedPorts" = "Used ports:"
+"roadmapLink" = "View roadmap (docs/ROADMAP.md)"
 
 [pages.client]
 "add" = "Add Client"
