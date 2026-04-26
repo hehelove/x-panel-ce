@@ -2041,16 +2041,177 @@ iplimit_remove_conflicts() {
 
 # 路线图 #7 / #10 / #12 — 网页版 SSH 工具（webssh）
 # 选型：huashengdun/webssh（MIT，Python tornado）
+# 部署原则：
+#   - 默认绑定 127.0.0.1，必须通过 SSH 隧道访问，避免直接公网暴露
+#   - 优先使用 pipx 隔离环境；fallback 到 pip --break-system-packages
+#   - systemd unit 名 x-panel-ce-webssh.service，避免与上游 webssh 冲突
 ce_webssh_install() {
-    echo ""
-    echo -e "${green}[CE] 路线图 #7 / #10 / #12 — 网页版 SSH 工具（webssh）${plain}"
-    echo -e "    选型：${yellow}huashengdun/webssh${plain}（MIT，Python tornado）"
-    echo -e "    部署：apt python3-pip → pip install webssh → systemd unit"
-    echo -e "    绑定：默认 ${yellow}127.0.0.1${plain}，避免直接公网暴露"
-    echo ""
-    echo -e "${yellow}    [TODO] 实现尚在 Stage 2.2.B，本菜单项目前为占位。${plain}"
-    echo -e "${green}    进度跟踪：https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md${plain}"
+    local svc="x-panel-ce-webssh.service"
+    local svc_path="/etc/systemd/system/${svc}"
+    local log_prefix="/var/log/x-panel-ce-webssh"
+    local default_port="22222"
+
+    while true; do
+        echo ""
+        echo -e "${green}===========================================${plain}"
+        echo -e "${green}  [CE] webssh 管理（huashengdun/webssh, MIT）${plain}"
+        echo -e "${green}===========================================${plain}"
+        echo -e "  ${green}1.${plain} 安装 / 重新部署 webssh"
+        echo -e "  ${green}2.${plain} 启动 webssh"
+        echo -e "  ${green}3.${plain} 停止 webssh"
+        echo -e "  ${green}4.${plain} 查看状态"
+        echo -e "  ${green}5.${plain} 卸载 webssh"
+        echo -e "  ${green}0.${plain} 返回主菜单"
+        echo -e "${green}===========================================${plain}"
+        read -p "请输入选项 [0-5]: " webssh_op
+
+        case "${webssh_op}" in
+        0)
+            break
+            ;;
+        1)
+            _ce_webssh_do_install "${svc}" "${svc_path}" "${log_prefix}" "${default_port}"
+            ;;
+        2)
+            systemctl start "${svc}" \
+                && echo -e "${green}[CE] 已启动 ${svc}${plain}" \
+                || LOGE "启动失败，请查看 systemctl status ${svc}"
+            ;;
+        3)
+            systemctl stop "${svc}" \
+                && echo -e "${green}[CE] 已停止 ${svc}${plain}" \
+                || LOGE "停止失败"
+            ;;
+        4)
+            systemctl status "${svc}" --no-pager 2>/dev/null \
+                || echo -e "${yellow}[CE] 未检测到 ${svc}（可能尚未安装）${plain}"
+            echo ""
+            ss -tlnp 2>/dev/null | grep -E "wssh|webssh" \
+                || echo -e "${yellow}[CE] 当前未监听 webssh 端口${plain}"
+            ;;
+        5)
+            _ce_webssh_do_uninstall "${svc}" "${svc_path}"
+            ;;
+        *)
+            LOGE "请输入正确的数字选项 [0-5]"
+            ;;
+        esac
+    done
+
     before_show_menu
+}
+
+_ce_webssh_do_install() {
+    local svc="$1" svc_path="$2" log_prefix="$3" default_port="$4"
+    local port wssh_bin
+
+    echo ""
+    echo -e "${yellow}[CE] webssh 默认绑定 127.0.0.1，需要通过 SSH 隧道访问${plain}"
+    echo -e "${yellow}     如需公网暴露，请自行修改 ${svc_path} 的 --address 参数并配置反向代理${plain}"
+    read -p "请输入 webssh 监听端口 [默认 ${default_port}]: " port
+    port="${port:-${default_port}}"
+    if ! [[ "${port}" =~ ^[0-9]+$ ]] || [ "${port}" -lt 1 ] || [ "${port}" -gt 65535 ]; then
+        LOGE "端口非法，必须是 1-65535 整数"
+        return 1
+    fi
+
+    echo -e "${green}[CE] 安装 webssh 依赖（python3 + pipx 优先，fallback pip）${plain}"
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -y >/dev/null 2>&1 || true
+        apt-get install -y -q python3 python3-pip python3-venv pipx 2>/dev/null \
+            || apt-get install -y -q python3 python3-pip python3-venv
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y -q python3 python3-pip pipx 2>/dev/null \
+            || dnf install -y -q python3 python3-pip
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y -q python3 python3-pip
+    elif command -v pacman >/dev/null 2>&1; then
+        pacman -Sy --noconfirm python python-pip python-pipx 2>/dev/null \
+            || pacman -Sy --noconfirm python python-pip
+    elif command -v apk >/dev/null 2>&1; then
+        apk add --no-cache python3 py3-pip
+    else
+        LOGE "未识别的发行版包管理器，请手动安装 python3 + pip"
+        return 1
+    fi
+
+    if command -v pipx >/dev/null 2>&1; then
+        pipx install webssh >/dev/null 2>&1 || pipx upgrade webssh >/dev/null 2>&1 || true
+    fi
+    wssh_bin="$(command -v wssh || true)"
+    if [ -z "${wssh_bin}" ] && [ -x "$HOME/.local/bin/wssh" ]; then
+        wssh_bin="$HOME/.local/bin/wssh"
+    fi
+    if [ -z "${wssh_bin}" ]; then
+        # fallback: pip
+        pip3 install --break-system-packages -q webssh 2>/dev/null \
+            || pip3 install -q webssh 2>/dev/null \
+            || true
+        wssh_bin="$(command -v wssh || true)"
+    fi
+    if [ -z "${wssh_bin}" ]; then
+        LOGE "webssh 安装失败：未找到 wssh 可执行文件，请手动排查 pipx / pip 安装日志"
+        return 1
+    fi
+    echo -e "${green}[CE] 已找到 wssh: ${wssh_bin}${plain}"
+
+    cat >"${svc_path}" <<EOF
+[Unit]
+Description=x-panel-ce webssh (huashengdun/webssh)
+Documentation=https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=${wssh_bin} --address=127.0.0.1 --port=${port} --logging=info --log-file-prefix=${log_prefix}.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable "${svc}" >/dev/null 2>&1 || true
+    systemctl restart "${svc}"
+    sleep 1
+
+    if systemctl is-active --quiet "${svc}"; then
+        echo ""
+        echo -e "${green}[CE] webssh 已安装并启动${plain}"
+        echo -e "    服务名：${yellow}${svc}${plain}"
+        echo -e "    监听：${yellow}127.0.0.1:${port}${plain}"
+        echo -e "    日志：${yellow}${log_prefix}.log${plain}"
+        echo ""
+        echo -e "${green}    访问方式（在本地电脑执行）：${plain}"
+        echo -e "      ${yellow}ssh -L 8888:127.0.0.1:${port} root@<your-vps-ip>${plain}"
+        echo -e "      然后浏览器打开 ${yellow}http://localhost:8888${plain}"
+    else
+        LOGE "webssh 启动失败，请查看 systemctl status ${svc}"
+    fi
+}
+
+_ce_webssh_do_uninstall() {
+    local svc="$1" svc_path="$2"
+
+    if [ ! -f "${svc_path}" ]; then
+        echo -e "${yellow}[CE] ${svc_path} 不存在，可能未通过 CE 安装${plain}"
+    fi
+
+    systemctl stop "${svc}" 2>/dev/null || true
+    systemctl disable "${svc}" 2>/dev/null || true
+    rm -f "${svc_path}"
+    systemctl daemon-reload
+
+    if command -v pipx >/dev/null 2>&1; then
+        pipx uninstall webssh >/dev/null 2>&1 || true
+    fi
+    pip3 uninstall -y --break-system-packages webssh >/dev/null 2>&1 \
+        || pip3 uninstall -y webssh >/dev/null 2>&1 \
+        || true
+
+    echo -e "${green}[CE] webssh 已卸载（systemd unit、pipx / pip 包）${plain}"
 }
 
 # 路线图 #8 — 线路 / IP 质量检测
