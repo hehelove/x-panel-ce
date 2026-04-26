@@ -51,13 +51,18 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 
 // ceQuickDeployReality 批量部署 Reality 入站，全成或全无（补偿删除）。
 // 参数全部可选，未填项使用 service 层默认值；返回创建出的端口/inbound ID 列表。
+//
+// hotfix(ce-1.0.2): 必须把当前登录用户的 Id 注入到 service 层，否则
+// 落库的 inbound user_id=0，list API 按 user_id 过滤后永远返回空，
+// 前端看不到节点（与 addInbound/importInbound 的注入位置保持一致）。
 func (a *InboundController) ceQuickDeployReality(c *gin.Context) {
 	var req service.CEQuickDeployRealityRequest
 	if err := c.ShouldBind(&req); err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	resp, err := a.inboundService.QuickDeployReality(req)
+	user := session.GetLoginUser(c)
+	resp, err := a.inboundService.QuickDeployReality(req, user.Id)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return

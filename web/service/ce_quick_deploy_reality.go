@@ -52,7 +52,12 @@ type CEQuickDeployRealityResponse struct {
 
 // QuickDeployReality 批量创建 VLESS+TCP+Reality+Vision 入站。
 // 失败时自动补偿删除已成功的条目，对调用方保证"全成或全无"语义。
-func (s *InboundService) QuickDeployReality(req CEQuickDeployRealityRequest) (*CEQuickDeployRealityResponse, error) {
+//
+// userId 必须由 controller 从登录会话注入；service 层不直接读 session，
+// 以保持 service 可测试且与 addInbound/importInbound 的注入位置一致。
+// hotfix(ce-1.0.2): 之前漏了 userId 注入，导致写入 user_id=0 的孤儿
+// 记录，list API（按 user_id 严格过滤）永远不返回，前端看不到节点。
+func (s *InboundService) QuickDeployReality(req CEQuickDeployRealityRequest, userId int) (*CEQuickDeployRealityResponse, error) {
 	if err := normalizeQuickDeployRealityReq(&req); err != nil {
 		return nil, err
 	}
@@ -74,7 +79,7 @@ func (s *InboundService) QuickDeployReality(req CEQuickDeployRealityRequest) (*C
 	for i := 0; i < req.Count; i++ {
 		port := ports[i]
 		remark := fmt.Sprintf("%s-%d", req.RemarkPrefix, port)
-		inbound, ierr := buildRealityInbound(port, remark, req.Target, req.ServerNames)
+		inbound, ierr := buildRealityInbound(port, remark, req.Target, req.ServerNames, userId)
 		if ierr != nil {
 			rollback()
 			return nil, fmt.Errorf("build inbound %d/%d (port=%d): %w", i+1, req.Count, port, ierr)
@@ -188,7 +193,9 @@ func realityShortIds() ([]string, error) {
 // buildRealityInbound 拼装一条 VLESS+TCP+Reality+Vision 入站的 model.Inbound，
 // settings/streamSettings/sniffing 三个字段直接构造为 JSON 字符串。
 // 所有 client 字段保持与 #15/#30 兼容（resetCycle=0, resetDay=1）。
-func buildRealityInbound(port int, remark, target, sni string) (*model.Inbound, error) {
+// userId 必须显式传入，对应当前登录用户；落库后 list API 才能按
+// user_id 过滤匹配返回（hotfix ce-1.0.2，原先漏掉这一字段）。
+func buildRealityInbound(port int, remark, target, sni string, userId int) (*model.Inbound, error) {
 	pair, err := (&ServerService{}).GetNewX25519Cert()
 	if err != nil {
 		return nil, fmt.Errorf("生成 X25519 keypair 失败: %w", err)
@@ -284,6 +291,7 @@ func buildRealityInbound(port int, remark, target, sni string) (*model.Inbound, 
 	}
 
 	return &model.Inbound{
+		UserId:         userId,
 		Up:             0,
 		Down:           0,
 		Total:          0,
