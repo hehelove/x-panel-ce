@@ -62,6 +62,14 @@
    - 这违反 GPL-3.0 软件最基本的用户隐私底线，且部署用户毫无知情或退出途径。
    - **CE 已在 Stage 0.1 中将常量与三处上报代码整段移除**；TG 报告功能现在仅向
      当前部署用户自己配置的管理员 chat 发送。任何下游 fork 不应再恢复该上报路径。
+   - **【后续清理】抽奖功能整套移除**：作为 Stage 0.1 的延续治理，抽奖框架本身
+     （`runLotteryDraw` / `sendLotteryGameInvitation` / 三处 callback / 主菜单
+     "🎁 娱乐抽奖"按钮 / `LotteryWin` 数据表 / `ceReportPrefs.Lottery` 字段 /
+     `LOTTERY_STICKER_IDS` 常量 / `SendStickerToTgbot` 辅助方法）也已在 Stage 4
+     收尾清理中整段移除：(1) 与 CE 开源、自托管、无收款定位无关；(2) 留着抽奖
+     框架等于给未来恢复中央上报路径留接口。`lottery_wins` 表仅在历史部署中
+     存在，CE 不再 AutoMigrate；如需彻底清理表，可在迁移到 CE 后于面板 SQLite
+     中手动 `DROP TABLE lottery_wins;`。
 6. **【Stage 6 决策】拒绝任何形式的"匿名遥测 / 部署 ID 上报"**
    - 上游"授权码后台联网验证 + 机器指纹"机制（路线图 #17）在 CE 中已无运行入口。
    - CE **永久承诺**：面板与 TG bot 在任何配置下，**只**与用户在本机配置的
@@ -85,4 +93,4 @@
 
 ---
 
-最后更新：2026-04-26（追加 Stage 6 反遥测承诺）
+最后更新：2026-04-26（追加 Stage 6 反遥测承诺；追加抽奖功能整套移除说明）

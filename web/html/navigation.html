@@ -266,7 +266,7 @@
                   <li><strong>#6 重定义：</strong> /start 角色标签替代会员等级（admin / user）；</li>
                   <li><strong>#10 / #12：</strong> /webssh 命令（status / start / stop），与 Stage 2.2.B 联动；</li>
                   <li><strong>#11：</strong> 12 个翻译文件中 TG 版本字串改为 "x-panel-ce Version (CE, GPL-3.0)"；</li>
-                  <li><strong>#16：</strong> /reportpref 命令 - 5 段每日报告内容定制（greeting / verse / image / news / lottery 开关，JSON 持久化于 setting 表）；</li>
+                  <li><strong>#16：</strong> /reportpref 命令 - 4 段每日报告内容定制（greeting / verse / image / news 开关，JSON 持久化于 setting 表）；</li>
                   <li><strong>#19：</strong> /getlinks 命令 - 本机入站节点摘要（远程被控端版本归属 Stage 5）；</li>
                   <li><strong>#25：</strong> 入站启用/禁用 TG 通知钩子（UpdateInbound 事务成功后异步发送）。</li>
                 </ol>
@@ -343,6 +343,7 @@
                   <li>抽奖回调中奖时（"中奖报告"）；</li>
                   <li>抽奖回调未中奖时（"未中奖报告"）。</li>
                 </ol>
+                <p>注：抽奖功能本身（含 <code>runLotteryDraw</code> / <code>sendLotteryGameInvitation</code> / 三处 callback / 主菜单"🎁 娱乐抽奖"按钮 / <code>LotteryWin</code> 数据表 / <code>ceReportPrefs.Lottery</code> 字段）已在后续清理中整段移除，与 CE 开源、自托管、无收款定位无关。</p>
                 <p>移除细节与 commit hash 详见仓库 <a href="https://github.com/hehelove/x-panel-ce/blob/main/NOTICE.md" target="_blank">NOTICE.md</a> 第 4 节第 5 项。</p>
                 <br>
 

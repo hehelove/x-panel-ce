@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"slices"
-	"time"
 
 	"x-ui/config"
 	"x-ui/database/model"
@@ -37,7 +36,6 @@ func initModels() error {
 		&xray.ClientTraffic{},
 		&model.HistoryOfSeeders{},
 		&LinkHistory{},   // 把 LinkHistory 表也迁移
-		&model.LotteryWin{},  // 新增 抽奖游戏LotteryWin 数据模型
 	}
 	for _, model := range models {
 		if err := db.AutoMigrate(model); err != nil {
@@ -189,30 +187,9 @@ func Checkpoint() error {
 	return nil
 }
 
-// HasUserWonToday 检查指定用户今天是否已经中过奖
-// 〔中文注释〕:【修正】将 gorm.DB() 替换为全局变量 db
-func HasUserWonToday(userID int64) (bool, error) {
-	now := time.Now()
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	endOfDay := startOfDay.Add(24 * time.Hour)
-
-	var count int64
-	// 在 lottery_wins 表中查找符合条件（用户ID匹配且中奖日期在今天之内）的记录数量
-	err := db.Model(&model.LotteryWin{}).Where("user_id = ? AND win_date >= ? AND win_date < ?", userID, startOfDay, endOfDay).Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
-// RecordUserWin 记录用户的中奖信息
-// 〔中文注释〕:【修正】将 gorm.DB() 替换为全局变量 db
-func RecordUserWin(userID int64, prize string) error {
-	winRecord := &model.LotteryWin{
-		UserID:  userID,
-		Prize:   prize,
-		WinDate: time.Now(),
-	}
-	// 在 lottery_wins 表中创建一条新的记录
-	return db.Create(winRecord).Error
-}
+// CE 路线图清理：上游 X-Panel-Pro 在此处提供 HasUserWonToday / RecordUserWin
+// 两个函数（配合 model.LotteryWin 表）支撑 TG bot "每日娱乐抽奖" 玩法。
+// 该功能与 CE 开源、自托管、无收款定位无关，且上游中奖回调原本会向开发者控制的
+// 中央 Telegram 频道异步上报用户信息（Stage 0.1 隐私后门一并清理路径）。
+// 现已整段移除。lottery_wins 表仅在历史部署中存在，CE 不再 AutoMigrate；
+// 如需彻底清理表，可在迁移到 CE 后于面板 SQLite 中手动 DROP TABLE。

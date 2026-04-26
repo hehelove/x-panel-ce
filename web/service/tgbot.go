@@ -84,21 +84,17 @@ var (
 
 var userStates = make(map[int64]string)
 
-// 〔中文注释〕: 贴纸的发送顺序将在运行时被随机打乱。
-var LOTTERY_STICKER_IDS = [3]string{
-	// STICKER_ID_1: 官方 Telegram Loading 动画 (经典)
-	"CAACAgIAAxkBAAIDxWX-R5hGfI9xXb6Q-iJ2XG8275TfAAI-BQACx0LhSb86q20xK0-rMwQ", 
-	// STICKER_ID_2: 官方 Telegram 思考/忙碌动画
-	"CAACAgIAAxkBAAIBv2X3F9c_pS8i0tF5N0Q-vF0Jc-oUAAJPAgACVwJpS2rN0xV8dFm2MwQ",
-	// STICKER_ID_3: 官方 Telegram 进度条动画
-	"CAACAgIAAxkBAAIB2GX3GNmXz18D2c9S-vF1X8X8ZgU9AALBAQACVwJpS_jH35KkK3y3MwQ",
-}
+// CE 路线图清理：原 var LOTTERY_STICKER_IDS（3 张 TG 贴纸 file_id）服务于
+// 抽奖 5 秒摇奖动画，随抽奖框架整段移除。
 
 // CE 安全清理（Stage 0.1）：
 // 上游 X-Panel-Pro 在此处硬编码了一个第三方 Telegram Bot Token 和 Chat IDs，
 // 用于将所有部署用户的主机名 / TG 用户名 / TG 用户 ID 等信息上报到上游开发者
 // 控制的频道（典型的"后门式追踪"）。这违反 GPL-3.0 用户隐私底线，已在 CE 中
-// 整段移除（含本常量与下方 SendReport / 抽奖回调里的三处异步 goroutine）。
+// 整段移除（commit 9c5599d2）。同期清理：抽奖功能整套（含 LOTTERY_STICKER_IDS /
+// runLotteryDraw / sendLotteryGameInvitation / SendStickerToTgbot / 三处回调
+// case / ceReportPrefs.Lottery 字段 / 主菜单"🎁 娱乐抽奖"按钮），详见
+// SendBackupToAdmins 上方的统一清理说明。
 // 详见 NOTICE.md 第 4 节。
 
 // CE 路线图 #25：当前已 Start 的 Tgbot 实例的 package 级别引用。
@@ -269,7 +265,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 			{Command: "selfcheck", Description: "🛡️ 部署自检报告（仅本机统计，不外发）"},
 			{Command: "webssh", Description: "🛰️ webssh 服务状态/启停（安装请用 SSH 内 x-ui 菜单 26）"},
 			{Command: "getlinks", Description: "🔗 列出本机入站节点摘要（CE 路线图 #19 第一阶段）"},
-			{Command: "reportpref", Description: "🛠️ 每日报告内容开关（greeting/verse/image/news/lottery）"},
+			{Command: "reportpref", Description: "🛠️ 每日报告内容开关（greeting/verse/image/news）"},
 		},
 	})
 	if err != nil {
@@ -705,7 +701,7 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 
 	// CE 路线图 #16：每日报告内容开关。
 	//   /reportpref                  - 显示当前偏好
-	//   /reportpref enable <name>    - 启用某项 (greeting/verse/image/news/lottery)
+	//   /reportpref enable <name>    - 启用某项 (greeting/verse/image/news)
 	//   /reportpref disable <name>   - 禁用某项
 	//   /reportpref reset            - 全部恢复默认（启用所有）
 	case "reportpref":
@@ -1877,133 +1873,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 
 		}
 
-	// 〔中文注释〕: 新增 - 处理用户点击 "玩" 抽奖游戏
-	case "lottery_play":
-		
-		// 确保本次 Shuffle 是随机的。
-		rng.Seed(time.Now().UnixNano()) 
-		chatId := callbackQuery.Message.GetChat().ID // 【确保 chatId 在函数开始时被初始化】
-		messageId := callbackQuery.Message.GetMessageID() // 获取原消息 ID
-		
-		// 〔中文注释〕: 首先，回应 TG 的回调请求，告诉用户机器人已收到操作。
-		t.sendCallbackAnswerTgBot(callbackQuery.ID, "〔X-Panel 小白哥〕正在为您摇奖，请稍后......")
-		
-		// 这条消息会永久停留在聊天窗口，作为等待提示。
-		t.editMessageTgBot(
-			chatId,
-			messageId,
-			"⏳ **抽奖结果生成中...**\n\n------->>>请耐心等待 5 秒......\n\n〔X-Panel 小白哥〕马上为您揭晓！",
-			// 【关键】: 不传入键盘参数，自动移除旧键盘
-		)
-
-		// --- 【发送动态贴纸（实现随机、容错、不中断）】 ---
-		var stickerMessageID int // 用于存储成功发送的贴纸消息 ID
-		
-        // 〔中文注释〕: 1. 将数组转换为可操作的切片
-		stickerIDsSlice := LOTTERY_STICKER_IDS[:] 
-
-		// 〔中文注释〕: 2. 随机化贴纸的发送顺序，确保每次动画不同。
-		// 注意: 依赖于文件头部导入的 rng "math/rand"
-		rng.Shuffle(len(stickerIDsSlice), func(i, j int) {
-			stickerIDsSlice[i], stickerIDsSlice[j] = stickerIDsSlice[j], stickerIDsSlice[i]
-		})
-        
-		// 〔中文注释〕: 3. 遍历随机化后的贴纸 ID，尝试发送，直到成功为止。
-		for _, stickerID := range stickerIDsSlice {
-			stickerMessage, err := t.SendStickerToTgbot(chatId, stickerID)
-			if err == nil {
-				// 成功发送，记录 ID 并跳出循环。
-				stickerMessageID = stickerMessage.MessageID
-				break
-			}
-			// 如果失败，记录日志并尝试下一个 ID。
-			logger.Warningf("尝试发送贴纸 %s 失败: %v", stickerID, err)
-		}
-		
-		// 【保持】: 程序在此处暂停 5 秒，用户可以看到动画。
-		time.Sleep(5000 * time.Millisecond)
-		
-		// 【新增：5秒后，删除动画贴纸】
-		if stickerMessageID != 0 {
-			// 〔中文注释〕: 抽奖结束后，删除刚才成功发送的动态贴纸消息。
-			t.deleteMessageTgBot(chatId, stickerMessageID)
-		}
-    
-        // 程序将在 5 秒后，继续执行下面的逻辑：
-		userID := callbackQuery.From.ID
-
-		// --- 【新增】: 获取用户信息，用于防伪 ---
-		user := callbackQuery.From
-		// 优先使用 Username，如果没有则使用 FirstName
-		userInfo := user.FirstName
-		if user.Username != "" {
-			userInfo = "@" + user.Username
-		}
-
-		
-		// 〔中文注释〕: 检查用户今天是否已经中过奖 (调用您在 database 中实现的函数)。
-		hasWon, err := database.HasUserWonToday(userID)
-		    if err != nil {
-				logger.Warningf("查询用户 %d 中奖记录失败: %v", userID, err)
-				t.editMessageTgBot(chatId, callbackQuery.Message.GetMessageID(), "抱歉，抽奖数据库查询失败，请联系管理员。")
-				return
-			}
-
-			if hasWon {
-				// 〔中文注释〕: 如果已经中奖，则告知用户并结束。
-				t.editMessageTgBot(chatId, callbackQuery.Message.GetMessageID(), "您今天已经中过奖啦，请明天再来！\n\n机会还多的是，贪心可是不好的哦~")
-				return
-			}
-
-			// 〔中文注释〕: 执行抽奖逻辑。
-			prize, resultMessage := t.runLotteryDraw()
-
-			// 〔中文注释〕: 如果中奖了（不是 "未中奖" 或 "错误"）。
-			if prize != "未中奖" && prize != "错误" {
-
-			winningTime := time.Now().Format("2006-01-02 15:04:05")
-
-			// CE 路线图 #4：上游中奖消息会拼接一个 SHA256 "防伪码 (Hash)" 字段，
-			// 用于配合远程授权服务器做"兑奖凭证"。CE 已切断授权服务器调用，
-			// 该 hash 在开源 fork 中失去任何兑换语义，反而会误导用户以为
-			// 存在某种"中央兑奖系统"，因此整段移除（含 sha256 / hex import）。
-			finalMessage := resultMessage + "\n\n" +
-				"**中奖用户**: " + userInfo + "\n\n" +
-				"**TG用户ID**: `" + strconv.FormatInt(user.ID, 10) + "`\n\n" +
-				"**中奖时间**: " + winningTime + "\n\n" +
-				"**说明**：本消息仅用于本地娱乐功能，不连接任何远程兑换服务。\n\n" +
-				"------------->>>>〔x-panel-ce〕项目仓库：\n\n" +
-				"------------->>>> https://github.com/hehelove/x-panel-ce/issues"
-
-			// CE 安全清理（Stage 0.1）：上游"中奖报告"异步上报至上游开发者
-			// 控制的中央 Telegram 频道（含 TG 用户名 / 用户 ID / 主机名），
-			// 典型隐私后门，已整段移除。仅保留本地数据库记录与回显消息。
-
-			// 〔中文注释〕: 记录中奖结果 (调用在 database 中实现的函数)。
-			err := database.RecordUserWin(userID, prize)
-			if err != nil {
-				logger.Warningf("记录用户 %d 中奖信息失败: %v", userID, err)
-				// 〔中文注释〕: 即使记录失败，也要告知用户中奖了，但提示管理员后台可能出错了。
-				finalMessage += "\n\n(后台警告：数据库记录失败，请管理员手动核实给予兑奖)"
-			}
-			// 〔中文注释〕: 编辑原消息，显示最终的中奖结果。
-				t.editMessageTgBot(chatId, callbackQuery.Message.GetMessageID(), finalMessage)
-			} else {
-				// 〔中文注释〕: 如果未中奖或抽奖出错，则直接显示相应信息。
-				t.editMessageTgBot(chatId, callbackQuery.Message.GetMessageID(), resultMessage)
-
-				// CE 安全清理（Stage 0.1）：上游"未中奖报告"同样把用户信息异步
-				// 上传到上游开发者控制的中央频道，已整段移除。
-			}
-			return // 〔中文注释〕: 处理完毕，直接返回，避免执行后续逻辑。
-
-	 // 〔中文注释〕: 新增 - 处理用户点击 "不玩" 抽奖游戏
-	 case "lottery_skip":
-			// 〔中文注释〕: 回应回调请求。
-			t.sendCallbackAnswerTgBot(callbackQuery.ID, "您已跳过游戏。")
-			// 〔中文注释〕: 编辑原消息，移除按钮并显示友好提示。
-			t.editMessageTgBot(chatId, callbackQuery.Message.GetMessageID(), "您选择不参与本次游戏，祝您一天愉快！")
-			return // 〔中文注释〕: 处理完毕，直接返回。	
+	// CE 路线图清理：上游 case "lottery_play" / "lottery_skip" 整段移除
+	// （含 5 秒摇奖动画 / 中奖记录 / 未中奖回显）。详见 SendBackupToAdmins 上方说明。
 
 	 // 【新增代码】: 在这里处理新按钮的回调
 	 case "oneclick_options":
@@ -2029,7 +1900,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		 t.deleteMessageTgBot(chatId, callbackQuery.Message.GetMessageID())
 		 t.sendCallbackAnswerTgBot(callbackQuery.ID, "已取消")
 		 t.SendMsgToTgbot(chatId, "已取消【订阅转换】安装操作。")
-	// 〔中文注释〕: 【新增回调处理】 - 重启面板、娱乐抽奖、VPS推荐
+	// 〔中文注释〕: 【新增回调处理】 - 重启面板、VPS推荐
 	case "restart_panel":
 		// 〔中文注释〕: 用户从菜单点击重启，删除主菜单并发送确认消息
 		t.deleteMessageTgBot(chatId, callbackQuery.Message.GetMessageID())
@@ -2071,12 +1942,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		// 〔中文注释〕: 发送一个临时消息提示用户，3秒后自动删除
 		t.SendMsgToTgbotDeleteAfter(chatId, "已取消重启操作。", 3)
 
-	case "lottery_play_menu":
-		// 〔中文注释〕: 从菜单触发抽奖，复用现有逻辑
-		t.deleteMessageTgBot(chatId, callbackQuery.Message.GetMessageID())
-		t.sendCallbackAnswerTgBot(callbackQuery.ID, "正在准备游戏......")
-		// 〔中文注释〕: 直接调用您代码中已有的 sendLotteryGameInvitation 函数即可
-		t.sendLotteryGameInvitation()
+	// CE 路线图清理：原 case "lottery_play_menu" 整段移除（详见同文件下方
+	// SendBackupToAdmins 上方的清理说明）。
 
 	case "vps_recommend":
 		// 〔中文注释〕: 发送您指定的VPS推荐信息
@@ -2312,9 +2179,9 @@ func (t *Tgbot) SendAnswer(chatId int64, msg string, isAdmin bool) {
 			tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.oneClick")).WithCallbackData(t.encodeQuery("oneclick_options")),
 			tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.subconverter")).WithCallbackData(t.encodeQuery("subconverter_install")),
 		),
-		// 〔中文注释〕: 【新增功能行】 - 添加娱乐抽奖和VPS推荐按钮
+		// CE 路线图清理：原"🎁 娱乐抽奖"按钮已随抽奖框架整段移除；
+		// 此处仅保留"🛰️ VPS 推荐"按钮。
 		tu.InlineKeyboardRow(
-			tu.InlineKeyboardButton("🎁 娱乐抽奖").WithCallbackData(t.encodeQuery("lottery_play_menu")),
 			tu.InlineKeyboardButton("🛰️ VPS 推荐").WithCallbackData(t.encodeQuery("vps_recommend")),
 		),
 		// TODOOOOOOOOOOOOOO: Add restart button here.
@@ -2485,18 +2352,19 @@ func (t *Tgbot) checkCEUpdate(chatId int64) {
 	t.SendMsgToTgbot(chatId, msg)
 }
 
-// CE 路线图 #16：每日报告 5 段内容的开关偏好（持久化于 setting 表 ceReportPrefs key）。
+// CE 路线图 #16：每日报告 4 段内容的开关偏好（持久化于 setting 表 ceReportPrefs key）。
 // 通过 /reportpref 命令在 TG 内动态启停，无需改 cron / 重启 panel。
+// 注：上游历史曾包含第 5 段 lottery（每日抽奖邀请），已随抽奖框架整段移除。
+// 旧版本 setting 中残留的 "lottery" 字段会被 json.Unmarshal 自动忽略，无需迁移。
 type ceReportPrefs struct {
 	Greeting bool `json:"greeting"`
 	Verse    bool `json:"verse"`
 	Image    bool `json:"image"`
 	News     bool `json:"news"`
-	Lottery  bool `json:"lottery"`
 }
 
 func defaultCEReportPrefs() ceReportPrefs {
-	return ceReportPrefs{Greeting: true, Verse: true, Image: true, News: true, Lottery: true}
+	return ceReportPrefs{Greeting: true, Verse: true, Image: true, News: true}
 }
 
 func (t *Tgbot) loadCEReportPrefs() ceReportPrefs {
@@ -2532,14 +2400,13 @@ func (p ceReportPrefs) summary() string {
 			"  - greeting (问候+时间)  : %s\n"+
 			"  - verse    (每日一语)   : %s\n"+
 			"  - image    (今日美图)   : %s\n"+
-			"  - news     (新闻简报)   : %s\n"+
-			"  - lottery  (抽奖邀请)   : %s\n\n"+
+			"  - news     (新闻简报)   : %s\n\n"+
 			"用法：\n"+
 			"  /reportpref                       查看当前偏好\n"+
 			"  /reportpref enable  <name>        启用某项\n"+
 			"  /reportpref disable <name>        禁用某项\n"+
 			"  /reportpref reset                 全部恢复默认（启用所有）",
-		mark(p.Greeting), mark(p.Verse), mark(p.Image), mark(p.News), mark(p.Lottery),
+		mark(p.Greeting), mark(p.Verse), mark(p.Image), mark(p.News),
 	)
 }
 
@@ -2560,7 +2427,7 @@ func (t *Tgbot) handleReportPrefCommand(chatId int64, args []string) {
 		t.SendMsgToTgbot(chatId, "✅ 已重置为默认（全部启用）。\n\n"+newPrefs.summary())
 	case "enable", "disable":
 		if len(args) < 2 {
-			t.SendMsgToTgbot(chatId, "❌ 缺少子项名称。可选: greeting / verse / image / news / lottery")
+			t.SendMsgToTgbot(chatId, "❌ 缺少子项名称。可选: greeting / verse / image / news")
 			return
 		}
 		setVal := args[0] == "enable"
@@ -2574,10 +2441,8 @@ func (t *Tgbot) handleReportPrefCommand(chatId int64, args []string) {
 			current.Image = setVal
 		case "news":
 			current.News = setVal
-		case "lottery":
-			current.Lottery = setVal
 		default:
-			t.SendMsgToTgbot(chatId, "❌ 未知子项: `"+target+"`\n可选: greeting / verse / image / news / lottery")
+			t.SendMsgToTgbot(chatId, "❌ 未知子项: `"+target+"`\n可选: greeting / verse / image / news")
 			return
 		}
 		if err := t.saveCEReportPrefs(current); err != nil {
@@ -2636,72 +2501,18 @@ func (t *Tgbot) SendReport() {
 		time.Sleep(1000 * time.Millisecond)
 	}
 
-	if prefs.Lottery {
-		t.sendLotteryGameInvitation()
-	}
+	// CE 路线图清理：原 prefs.Lottery 段（拼接抽奖邀请按钮）已随抽奖框架整段移除。
 }
 
-// 〔中文注释〕: 新增函数，执行抽奖逻辑并返回结果。
-func (t *Tgbot) runLotteryDraw() (prize string, message string) {
-	// 〔中文注释〕: 使用 crypto/rand 生成一个 0-999 的安全随机数，确保公平性。
-	n, err := rand.Int(rand.Reader, big.NewInt(1000))
-    if err != nil {
-        logger.Warningf("生成抽奖随机数失败: %v", err)
-        // 〔中文注释〕: 如果安全随机数生成失败，返回一个错误提示，避免继续执行。
-        return "错误", "抽奖系统暂时出现问题，请联系管理员。"
-    }
-	roll := n.Int64()
-
-	// 〔中文注释〕: 设置不同奖项的中奖概率。总中奖概率：3%+8%+12%+20%=43% 。
-	// 一等奖: 30/1000 (3%)
-	if roll < 30 {
-		prize = "一等奖"
-		message = "🎉 **天选之人！恭喜您抽中【一等奖】！** 🎉\n\n请联系管理员兑换神秘大奖！"
-		return
-	}
-	// 二等奖: 80/1000 (8%)，累计上限 110
-	if roll < 110 {
-		prize = "二等奖"
-		message = "🎊 **欧气满满！恭喜您抽中【二等奖】！** 🎊\n\n请联系管理员兑换牛逼奖品！"
-		return
-	}
-	// 三等奖: 120/1000 (12%)，累计上限 230
-	if roll < 230 {
-		prize = "三等奖"
-		message = "🎁 **运气不错！恭喜您抽中【三等奖】！** 🎁\n\n请联系管理员兑换小惊喜！"
-		return
-	}
-	// 安慰奖: 200/1000 (20%)，累计上限 430
-	if roll < 430 {
-		prize = "安慰奖"
-		message = "👍 **重在参与！恭喜您抽中【安慰奖】！** 👍\n\n请联系管理员兑换鼓励奖！"
-		return
-	}
-
-	// 〔中文注释〕: 如果未中任何奖项。未中奖概率 57% 。
-	prize = "未中奖"
-	message = "😕 **谢谢参与**倒霉的宝子。\n\n很遗憾，本次您未中奖，明天再来试试吧！"
-	return
-}
-
-// 〔中文注释〕: 新增函数，用于发送抽奖游戏邀请。
-func (t *Tgbot) sendLotteryGameInvitation() {
-	// 〔中文注释〕: 构建邀请消息和内联键盘。
-	msg := "-------🎉 福利区 🎉-------\n\n✨ **每日幸运抽奖游戏**\n\n-->您想试试今天的手气吗？"
-
-	// 〔中文注释〕: "lottery_play" 和 "lottery_skip" 将作为回调数据，用于后续处理。
-	inlineKeyboard := tu.InlineKeyboard(
-		tu.InlineKeyboardRow(
-			tu.InlineKeyboardButton("🤩玩，我要赢奖品/萝莉！！！").WithCallbackData(t.encodeQuery("lottery_play")),
-		),
-		tu.InlineKeyboardRow(
-			tu.InlineKeyboardButton("❌劳资不玩，我要看美图......").WithCallbackData(t.encodeQuery("lottery_skip")),
-		),
-	)
-
-	// 〔中文注释〕: 将带键盘的消息发送给所有管理员。
-	t.SendMsgToTgbotAdmins(msg, inlineKeyboard)
-}
+// CE 路线图清理：上游 X-Panel-Pro 在此处提供 runLotteryDraw（按概率发奖）+
+// sendLotteryGameInvitation（每日报告中拼接抽奖邀请按钮）两个函数，配合
+// case "lottery_play" / "lottery_skip" / "lottery_play_menu" 三处回调。
+// 该玩法与 CE 开源、自托管、无收款定位无关；且上游中奖/未中奖回调原本会向
+// 开发者控制的中央 Telegram 频道异步上报 TG 用户名 + 用户 ID + 主机名
+// （Stage 0.1 隐私后门 9c5599d2 已清理那一层，但抽奖框架本身仍存）。
+// 现整段移除：包含两个函数 + 上方三个 case + var LOTTERY_STICKER_IDS +
+// SendStickerToTgbot 辅助方法 + ceReportPrefs.Lottery 字段 + /reportpref
+// 帮助文本中的 lottery 子项 + 主菜单"🎁 娱乐抽奖"按钮。详见 NOTICE.md。
 
 func (t *Tgbot) SendBackupToAdmins() {
 	if !t.IsRunning() {
@@ -4655,23 +4466,6 @@ func (t *Tgbot) getNewsBriefingWithFallback() (string, error) {
 	return "", errors.New("所有新闻来源均获取失败，请检查网络或 API 状态")
 }
 
-// 【新增的辅助函数】: 发送贴纸到指定的聊天 ID，并返回消息对象（用于获取 ID）
-func (t *Tgbot) SendStickerToTgbot(chatId int64, fileId string) (*telego.Message, error) {
-	// 必须使用 SendStickerParams 结构体，并传入 context
-	params := telego.SendStickerParams{
-		ChatID: tu.ID(chatId),
-		// 对于现有 File ID 字符串，必须封装在 telego.InputFile 结构中。
-		Sticker: telego.InputFile{FileID: fileId}, 
-	}
-	
-	// 使用全局变量 bot 调用 SendSticker，并传入 context.Background() 和参数指针
-	msg, err := bot.SendSticker(context.Background(), &params)
-	
-	if err != nil {
-		logger.Errorf("发送贴纸失败到聊天 ID %d: %v", chatId, err)
-		return nil, err
-	}
-	
-	// 成功返回 *telego.Message 对象
-	return msg, nil
-}
+// CE 路线图清理：上游 SendStickerToTgbot 仅服务于 case "lottery_play" 内部
+// 5 秒"摇奖动画"，随抽奖框架一并整段移除（详见同文件上方 SendBackupToAdmins
+// 前一处的统一清理说明）。如未来 CE 需要发送贴纸，请重新实现并明确用例。
