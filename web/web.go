@@ -322,6 +322,14 @@ func (s *Server) startTask() {
 	// CE 路线图 #15：每日 0:00 检查所有客户端的 resetCycle，按需自动重置流量
 	s.cron.AddJob("@daily", job.NewResetTrafficCycleJob())
 
+	// CE 路线图 #100：每天 03:00 自动 DB 备份；启动 30s 后异步触发一次首次备份。
+	// 6 段 cron 表达式（WithSeconds 模式）：秒0 / 分0 / 时3 / 任意日 / 任意月 / 任意周。
+	s.cron.AddJob("0 0 3 * * *", job.NewDBBackupJob())
+	go func() {
+		time.Sleep(30 * time.Second)
+		job.NewDBBackupJob().Run()
+	}()
+
 	// Make a traffic condition every day, 8:30
 	var entry cron.EntryID
 	isTgbotenabled, err := s.settingService.GetTgbotEnabled()
