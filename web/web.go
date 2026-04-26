@@ -319,6 +319,9 @@ func (s *Server) startTask() {
 	// check client ips from log file every day
 	s.cron.AddJob("@daily", job.NewClearLogsJob())
 
+	// CE 路线图 #15：每日 0:00 检查所有客户端的 resetCycle，按需自动重置流量
+	s.cron.AddJob("@daily", job.NewResetTrafficCycleJob())
+
 	// Make a traffic condition every day, 8:30
 	var entry cron.EntryID
 	isTgbotenabled, err := s.settingService.GetTgbotEnabled()

@@ -172,6 +172,12 @@
 
 [pages.inbounds]
 "realityRandomDestDesc" = "點擊閃電圖示從 CE 內建候選池隨機選一個 Reality 偷取域名（同時填入 Target 與 SNI）"
+"resetCycle" = "流量重置週期"
+"resetCycleDesc" = "面板每日 0:00 自動按週期清零客戶端流量；不重啟 Xray、不影響在線連接"
+"resetCycleNever" = "從不"
+"resetCycleDaily" = "每日"
+"resetCycleWeekly" = "每週（週一）"
+"resetCycleMonthly" = "每月（1 號）"
 "allTimeTraffic" = "累計總流量"
 "allTimeTrafficUsage" = "所有时间总使用量"
 "title" = "入站列表"

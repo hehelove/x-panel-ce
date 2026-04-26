@@ -159,6 +159,12 @@
 
 [pages.inbounds]
 "realityRandomDestDesc" = "Click the lightning icon to randomly pick a Reality steal-domain from the CE built-in candidate pool (fills both Target and SNI)."
+"resetCycle" = "Reset Cycle"
+"resetCycleDesc" = "Daily 0:00 cron auto-resets client traffic counters per the chosen cycle; no Xray restart, no impact on live connections."
+"resetCycleNever" = "Never"
+"resetCycleDaily" = "Daily"
+"resetCycleWeekly" = "Weekly (Mon)"
+"resetCycleMonthly" = "Monthly (1st)"
 "allTimeTraffic" = "総トラフィック"
 "allTimeTrafficUsage" = "これまでの総使用量"
 "title" = "インバウンド一覧"

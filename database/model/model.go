@@ -112,6 +112,15 @@ type Client struct {
 	SubID      string `json:"subId" form:"subId"`
 	Comment    string `json:"comment" form:"comment"`
 	Reset      int    `json:"reset" form:"reset"`
+	// CE 路线图 #15：自动重置流量周期。
+	//   0 = 从不（默认，行为与上游一致）
+	//   1 = 每日（每天 0:00 由 cron 触发）
+	//   7 = 每周（仅周一 0:00 触发）
+	//   30 = 每月（仅每月 1 号 0:00 触发；#30 实现了按指定 1-31 号触发会
+	//        在另一个字段 ResetDay 上扩展，本字段保持枚举语义）
+	// 该字段存于 inbound.settings 的 client JSON 内，xray 写入阶段会被
+	// xray.go 的白名单逻辑剔除，不影响 xray 解析。
+	ResetCycle int    `json:"resetCycle" form:"resetCycle"`
 	CreatedAt  int64  `json:"created_at,omitempty"`
 	UpdatedAt  int64  `json:"updated_at,omitempty"`
 }

@@ -1790,6 +1790,60 @@ func (s *InboundService) ResetClientTrafficByEmail(clientEmail string) error {
 	return nil
 }
 
+// ResetClientTrafficByCycle 是 CE 路线图 #15 的核心实现：
+// 遍历全部 inbound 的 client 列表，按 client.ResetCycle 字段决定今天
+// 是否应该把该客户端的流量计数清零。
+//   - 0：从不
+//   - 1：每天都重置
+//   - 7：仅每周一重置
+//   - 30：仅每月 1 号重置
+//
+// 该方法仅写 client_traffics 表（up/down/enable），不重启 xray，
+// 不影响在线连接；返回本次成功重置的客户端数量与首个错误（若有）。
+func (s *InboundService) ResetClientTrafficByCycle() (int, error) {
+	inbounds, err := s.GetAllInbounds()
+	if err != nil {
+		return 0, err
+	}
+
+	now := time.Now()
+	weekday := now.Weekday()
+	day := now.Day()
+	resetCount := 0
+
+	for _, inbound := range inbounds {
+		clients, err := s.GetClients(inbound)
+		if err != nil {
+			logger.Warningf("CE #15: 解析 inbound %d 客户端失败: %v", inbound.Id, err)
+			continue
+		}
+		for _, c := range clients {
+			if c.Email == "" || c.ResetCycle == 0 {
+				continue
+			}
+			shouldReset := false
+			switch c.ResetCycle {
+			case 1:
+				shouldReset = true
+			case 7:
+				shouldReset = weekday == time.Monday
+			case 30:
+				shouldReset = day == 1
+			}
+			if !shouldReset {
+				continue
+			}
+			if err := s.ResetClientTrafficByEmail(c.Email); err != nil {
+				logger.Warningf("CE #15: 重置 %s 流量失败: %v", c.Email, err)
+				continue
+			}
+			resetCount++
+			logger.Infof("CE #15: 已为 %s 自动重置流量 (cycle=%d)", c.Email, c.ResetCycle)
+		}
+	}
+	return resetCount, nil
+}
+
 func (s *InboundService) ResetClientTraffic(id int, clientEmail string) (bool, error) {
 	needRestart := false
 
