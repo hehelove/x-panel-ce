@@ -230,6 +230,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 			{Command: "checkupdate", Description: "🆕 检查 x-panel-ce 是否有新版本"},
 			{Command: "selfcheck", Description: "🛡️ 部署自检报告（仅本机统计，不外发）"},
 			{Command: "webssh", Description: "🛰️ webssh 服务状态/启停（安装请用 SSH 内 x-ui 菜单 26）"},
+			{Command: "getlinks", Description: "🔗 列出本机入站节点摘要（CE 路线图 #19 第一阶段）"},
 		},
 	})
 	if err != nil {
@@ -640,6 +641,18 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		onlyMessage = true
 		if isAdmin {
 			t.handleWebsshCommand(chatId, commandArgs)
+		} else {
+			handleUnknownCommand()
+		}
+
+	// CE 路线图 #19（第一阶段，本机版）：列出本机所有入站节点摘要。
+	// 完整分享链接生成逻辑在 sub.SubService 中，但 sub 包反向 import
+	// web/service，会形成循环依赖；故第一阶段仅做摘要 + UI 引导。
+	// 远程被控端版本在 Stage 5（主从机制）中实现。
+	case "getlinks":
+		onlyMessage = true
+		if isAdmin {
+			t.sendInboundLinkSummary(chatId)
 		} else {
 			handleUnknownCommand()
 		}
@@ -2726,6 +2739,78 @@ func (t *Tgbot) queryWebsshStatus() string {
 			"  - is-enabled: `%s`",
 		icon, ceWebsshUnit, active, enabled,
 	)
+}
+
+// CE 路线图 #19（第一阶段，本机版）：列出本机所有入站节点摘要。
+// 仅展示元数据（remark / 协议 / 监听 / 端口 / 客户端列表 / subId），
+// 不在 TG 内拼装完整分享链接——sub.SubService.getLink 是私有方法，
+// 且 sub 包 import x-ui/web/service，反向 import 会循环依赖。
+// 用户拿到 subId 后可在 panel UI 复制完整链接，或访问订阅 URL 自动拉取。
+func (t *Tgbot) sendInboundLinkSummary(chatId int64) {
+	inbounds, err := t.inboundService.GetAllInbounds()
+	if err != nil {
+		t.SendMsgToTgbot(chatId, "❌ 入站列表读取失败："+err.Error())
+		return
+	}
+	if len(inbounds) == 0 {
+		t.SendMsgToTgbot(chatId, "ℹ️ 当前未配置任何入站。")
+		return
+	}
+
+	var sb strings.Builder
+	sb.WriteString("📡 本机入站节点摘要（CE 路线图 #19 第一阶段）\n")
+	sb.WriteString("==============================\n\n")
+
+	enabledCount := 0
+	for _, ib := range inbounds {
+		if !ib.Enable {
+			continue
+		}
+		enabledCount++
+		listen := ib.Listen
+		if listen == "" {
+			listen = "0.0.0.0"
+		}
+		sb.WriteString(fmt.Sprintf("🔹 *%s*\n", ib.Remark))
+		sb.WriteString(fmt.Sprintf("  - 协议: %s\n", string(ib.Protocol)))
+		sb.WriteString(fmt.Sprintf("  - 监听: %s:%d\n", listen, ib.Port))
+
+		clients, cerr := t.inboundService.GetClients(ib)
+		if cerr != nil {
+			sb.WriteString("  - 客户端: 读取失败 (" + cerr.Error() + ")\n\n")
+			continue
+		}
+		if len(clients) == 0 {
+			sb.WriteString("  - 客户端: 0\n\n")
+			continue
+		}
+		sb.WriteString(fmt.Sprintf("  - 客户端 (%d):\n", len(clients)))
+		for _, c := range clients {
+			status := "✅"
+			if !c.Enable {
+				status = "❌"
+			}
+			subId := c.SubID
+			if subId == "" {
+				subId = "(无)"
+			}
+			email := c.Email
+			if email == "" {
+				email = "(未命名)"
+			}
+			sb.WriteString(fmt.Sprintf("      %s %s | subId: %s\n", status, email, subId))
+		}
+		sb.WriteString("\n")
+	}
+	if enabledCount == 0 {
+		sb.WriteString("(当前没有启用的入站)\n\n")
+	}
+
+	sb.WriteString("---\n")
+	sb.WriteString("💡 完整分享链接请在 panel UI → 入站列表 → 客户端详情 → 二维码/订阅 中复制；\n")
+	sb.WriteString("📌 远程被控端节点链接将在 Stage 5（主从机制）中实现。")
+
+	t.SendMsgToTgbot(chatId, sb.String())
 }
 
 func (t *Tgbot) UserLoginNotify(username string, password string, ip string, time string, status LoginStatus) {
