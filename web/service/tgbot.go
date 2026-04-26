@@ -522,6 +522,14 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		if isAdmin {
 			msg += t.I18nBot("tgbot.commands.welcome", "Hostname=="+hostname)
 		}
+		// CE 路线图 #6：上游"会员标识"绑定 Pro 等级体系，CE 中无收款 / 无会员等级，
+		// 改为纯技术性的"角色标签"——仅区分 admin / user 两种调用权限，
+		// 与 isAdmin 判断保持一致，不引入任何商业语义。
+		if isAdmin {
+			msg += "🛡️ 角色：管理员 (admin) — x-panel-ce CE / GPL-3.0\r\n"
+		} else {
+			msg += "👤 角色：客户端用户 (user) — x-panel-ce CE / GPL-3.0\r\n"
+		}
 		msg += "\n\n" + t.I18nBot("tgbot.commands.pleaseChoose")
 	case "status":
 		onlyMessage = true
