@@ -38,6 +38,17 @@ func (s *XrayService) IsXrayRunning() bool {
 	return p != nil && p.IsRunning()
 }
 
+// GetCurrentXrayConfig 返回 xray 进程当前在用的 *xray.Config（内存对象）。
+// 与 GetXrayConfig() 不同：本方法不重建模板、不读 DB、零副作用，
+// 用于 CE 路线图 #103 健康度判断（比较 DB inbound 是否真的被 xray 加载）。
+// 若 xray 尚未启动返回 nil。
+func (s *XrayService) GetCurrentXrayConfig() *xray.Config {
+	if p == nil {
+		return nil
+	}
+	return p.GetConfig()
+}
+
 // 中文注释:
 // 新增 GetApiPort 函数。
 // 这个函数的作用是安全地返回当前 Xray 进程正在监听的 API 端口号。

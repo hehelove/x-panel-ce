@@ -272,6 +272,13 @@
 "oneClickConfig"="一鍵配置"
 "is_subConversion"="訂閱轉換"
 "confirmCreate"="確認提交創建"
+"health" = "健康度"
+"healthUnknown" = "狀態未知"
+
+[pages.inbounds.healthReason]
+"disabled" = "已停用"
+"orphan_not_in_xray" = "孤兒資料 / xray 未載入此入站"
+"port_not_listening" = "連接埠未監聽"
 
 [pages.inbounds.ceQuickDeploy]
 "title" = "批次部署 Reality（CE）"

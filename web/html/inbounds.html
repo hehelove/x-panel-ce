@@ -548,6 +548,15 @@
                     <template slot="enable" slot-scope="text, dbInbound">
                       <a-switch v-model="dbInbound.enable" @change="switchEnable(dbInbound.id,dbInbound.enable)"></a-switch>
                     </template>
+                    <!-- CE 路线图 #103：入站健康度三色圆点 -->
+                    <template slot="health" slot-scope="text, dbInbound">
+                      <a-tooltip :overlay-class-name="themeSwitcher.currentTheme">
+                        <template slot="title">
+                          <span>[[ healthTooltip(dbInbound.id) ]]</span>
+                        </template>
+                        <a-icon type="check-circle" :style="{ color: healthDotColor(dbInbound.id), fontSize: '14px' }"></a-icon>
+                      </a-tooltip>
+                    </template>
                     <template slot="expiryTime" slot-scope="text, dbInbound">
                       <a-popover v-if="dbInbound.expiryTime > 0" :overlay-class-name="themeSwitcher.currentTheme">
                         <template slot="content" v-if="app.datepicker === 'gregorian'">
@@ -817,6 +826,11 @@
         width: 30,
         scopedSlots: { customRender: 'enable' },
     }, {
+        title: '{{ i18n "pages.inbounds.health" }}',
+        align: 'center',
+        width: 30,
+        scopedSlots: { customRender: 'health' },
+    }, {
         title: '{{ i18n "pages.inbounds.remark" }}',
         align: 'center',
         width: 50,
@@ -964,6 +978,11 @@
                 running: false,
                 throttleMs: 200,
             },
+            // CE 路线图 #103：入站健康度（id -> {status,reason}）
+            // 后端 30s 缓存 + 前端 30s setInterval 拉一次（与 inbounds 自动刷新解耦）
+            healthMap: {},
+            healthTimer: null,
+            healthIntervalMs: 30000,
         },
 		
         mounted() {
@@ -982,11 +1001,73 @@
             } else {
                 this.getDBInbounds();
             }
+
+            // CE 路线图 #103：启动健康度轮询（独立于 inbound 数据刷新循环）
+            this.startHealthRefreshLoop();
+        },
+        beforeDestroy() {
+            if (this.healthTimer) {
+                clearInterval(this.healthTimer);
+                this.healthTimer = null;
+            }
         },
 		
         methods: {
             loading(spinning = true) {
                 this.loadingStates.spinning = spinning;
+            },
+            // CE 路线图 #103：拉取入站健康度（id -> {status,reason}）。
+            // - force=true 后端绕过 30s 缓存重新探测端口（用户手动刷新）
+            // - 默认走缓存：高频前端轮询时只是把已缓存的 30s 数据传一遍
+            // - 失败静默：健康度是辅助显示，绝不阻塞主列表
+            async refreshHealth(force) {
+                try {
+                    const url = force
+                        ? '/panel/api/inbounds/health?force=1'
+                        : '/panel/api/inbounds/health';
+                    const resp = await axios.get(url);
+                    const list = (resp && resp.data && resp.data.obj) || [];
+                    const m = {};
+                    for (const r of list) {
+                        m[r.id] = { status: r.status, reason: r.reason || '' };
+                    }
+                    this.healthMap = m;
+                } catch (e) {
+                    // 静默：网络/鉴权异常不刷新 healthMap，UI 维持上一次状态
+                }
+            },
+            startHealthRefreshLoop() {
+                if (this.healthTimer) return;
+                this.refreshHealth(false);
+                this.healthTimer = setInterval(() => {
+                    this.refreshHealth(false);
+                }, this.healthIntervalMs);
+            },
+            // CE #103：圆点颜色映射。未知/未拉取到时返回灰色。
+            healthDotColor(id) {
+                const h = this.healthMap[id];
+                if (!h) return '#BFBFBF';
+                switch (h.status) {
+                    case 'green':  return '#52C41A';
+                    case 'yellow': return '#FAAD14';
+                    case 'red':    return '#FF4D4F';
+                    case 'gray':   return '#BFBFBF';
+                    default:       return '#BFBFBF';
+                }
+            },
+            healthTooltip(id) {
+                const h = this.healthMap[id];
+                if (!h) return '{{ i18n "pages.inbounds.healthUnknown" }}';
+                const statusText = '{{ i18n "pages.inbounds.health" }}: ' + (h.status || '');
+                if (!h.reason) return statusText;
+                const reasonKey = 'pages.inbounds.healthReason.' + h.reason;
+                const reasonMap = {
+                    'disabled': '{{ i18n "pages.inbounds.healthReason.disabled" }}',
+                    'orphan_not_in_xray': '{{ i18n "pages.inbounds.healthReason.orphan_not_in_xray" }}',
+                    'port_not_listening': '{{ i18n "pages.inbounds.healthReason.port_not_listening" }}',
+                };
+                const reasonText = reasonMap[h.reason] || h.reason;
+                return statusText + ' / ' + reasonText;
             },
             async getDBInbounds() {
                 this.refreshing = true;
@@ -2146,6 +2227,8 @@ async openPort(port) {
                 if (!this.refreshing) {
                     this.loadingStates.spinning = true;
                     await this.getDBInbounds();
+                    // CE 路线图 #103：手动刷新顺便强刷健康度（绕过后端 30s 缓存）
+                    await this.refreshHealth(true);
                     this.loadingStates.spinning = false;
                 }
             },

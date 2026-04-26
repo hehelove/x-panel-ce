@@ -268,6 +268,13 @@
 "oneClickConfig"="One-click configuration"
 "is_subConversion"="Subscription Conversion"
 "confirmCreate"="Confirm submission creation"
+"health" = "Health"
+"healthUnknown" = "Status unknown"
+
+[pages.inbounds.healthReason]
+"disabled" = "Disabled"
+"orphan_not_in_xray" = "Orphan / not loaded by xray"
+"port_not_listening" = "Port not listening"
 
 [pages.inbounds.ceQuickDeploy]
 "title" = "Bulk deploy Reality (CE)"

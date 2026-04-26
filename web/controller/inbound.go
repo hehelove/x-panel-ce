@@ -13,8 +13,9 @@ import (
 )
 
 type InboundController struct {
-	inboundService service.InboundService
-	xrayService    service.XrayService
+	inboundService       service.InboundService
+	xrayService          service.XrayService
+	inboundHealthService service.InboundHealthService
 }
 
 func NewInboundController(g *gin.RouterGroup) *InboundController {
@@ -47,6 +48,21 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.POST("/updateClientTraffic/:email", a.updateClientTraffic)
 	// CE 路线图 #31：批量部署 N 条 VLESS+TCP+Reality+Vision 入站
 	g.POST("/ce/quickDeployReality", a.ceQuickDeployReality)
+	// CE 路线图 #103：入站健康度（绿/黄/红/灰）三态可视化，30s 缓存，?force=1 强刷
+	g.GET("/health", a.healthCheck)
+}
+
+// healthCheck 返回所有 inbound 的健康度报告。
+// 默认 30s 缓存（前端轮询友好），?force=1 强制重新探测。
+// CE 路线图 #103。
+func (a *InboundController) healthCheck(c *gin.Context) {
+	force := c.Query("force") == "1"
+	report, err := a.inboundHealthService.CheckAll(force)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, report, nil)
 }
 
 // ceQuickDeployReality 批量部署 Reality 入站，全成或全无（补偿删除）。
