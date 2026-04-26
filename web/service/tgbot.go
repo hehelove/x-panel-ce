@@ -96,12 +96,12 @@ var LOTTERY_STICKER_IDS = [3]string{
 	"CAACAgIAAxkBAAIB2GX3GNmXz18D2c9S-vF1X8X8ZgU9AALBAQACVwJpS_jH35KkK3y3MwQ",
 }
 
-const REPORT_BOT_TOKEN = "8419563495:AAEGy6GwPdlqTHgans0eayYVSbm_oyDP8mE"
-var REPORT_CHAT_IDS = []int64{
-	-1003088514661,
-	-1003199730950,
-	-1002125836983,
-}
+// CE 安全清理（Stage 0.1）：
+// 上游 X-Panel-Pro 在此处硬编码了一个第三方 Telegram Bot Token 和 Chat IDs，
+// 用于将所有部署用户的主机名 / TG 用户名 / TG 用户 ID 等信息上报到上游开发者
+// 控制的频道（典型的"后门式追踪"）。这违反 GPL-3.0 用户隐私底线，已在 CE 中
+// 整段移除（含本常量与下方 SendReport / 抽奖回调里的三处异步 goroutine）。
+// 详见 NOTICE.md 第 4 节。
 
 type LoginStatus byte
 
@@ -1875,51 +1875,10 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 							"------------->>>>〔x-panel-ce〕项目仓库：\n\n" +
 							"------------->>>> https://github.com/hehelove/x-panel-ce/issues"
 
-			// --- 【向中央统计频道发送报告（异步）】 ---
-			go func() {
-				// 尝试获取主机名作为唯一标识
-				vpsIdentifier, err := os.Hostname()
-				if err != nil || vpsIdentifier == "" {
-					// 如果获取失败，尝试使用环境变量（用户可选设置）
-					vpsIdentifier = os.Getenv("VPS_IDENTIFIER")
-					if vpsIdentifier == "" {
-						// 如果都失败，使用一个通用标识
-						vpsIdentifier = "UNKNOWN_HOST"
-					}
-				}
+			// CE 安全清理（Stage 0.1）：上游"中奖报告"异步上报至上游开发者
+			// 控制的中央 Telegram 频道（含 TG 用户名 / 用户 ID / 主机名），
+			// 典型隐私后门，已整段移除。仅保留本地数据库记录与回显消息。
 
-				reportMessage := fmt.Sprintf(
-					"✅ **[中奖报告 - %s]**\n\n" +
-					"**用户名**: `%s`\n\n" +
-					"**用户ID**: `%d`\n\n" +
-					"**中奖时间**: %s\n\n" + 
-					"**部署来源**: `%s`", // 自动获取的主机名
-					prize,
-					userInfo,
-					userID,
-					winningTime,
-					vpsIdentifier,
-				)
-				// --- 【核心】: 创建一个临时的、专用于报告的机器人实例 ---
-		        reportBot, err := telego.NewBot(REPORT_BOT_TOKEN)
-		        if err != nil {
-			        logger.Errorf("无法创建报告机器人实例: %v", err)
-			        return // 如果无法创建报告机器人，则静默失败，不影响用户
-		        }
-
-				// --- 遍历所有报告频道 ID 并发送 ---
-				for _, chatID := range REPORT_CHAT_IDS {
-					// 构建正确的 SendMessageParams
-					params := tu.Message(tu.ID(chatID), reportMessage).WithParseMode(telego.ModeMarkdown)
-
-					// 使用临时机器人的 SendMessage 方法发送报告
-					_, err = reportBot.SendMessage(context.Background(), params)
-					if err != nil {
-						logger.Warningf("发送【中奖报告】到频道 %d 失败: %v", chatID, err)
-					}
-				}	
-	        }() // 异步执行结束
-					
 			// 〔中文注释〕: 记录中奖结果 (调用在 database 中实现的函数)。
 			err := database.RecordUserWin(userID, prize)
 			if err != nil {
@@ -1933,48 +1892,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				// 〔中文注释〕: 如果未中奖或抽奖出错，则直接显示相应信息。
 				t.editMessageTgBot(chatId, callbackQuery.Message.GetMessageID(), resultMessage)
 
-				// --- 【新增：未中奖也发送报告到中央频道（异步）】 ---
-				go func() {
-					// 尝试获取主机名作为唯一标识
-					vpsIdentifier, err := os.Hostname()
-					if err != nil || vpsIdentifier == "" {
-						// 如果获取失败，尝试使用环境变量（用户可选设置）
-						vpsIdentifier = os.Getenv("VPS_IDENTIFIER")
-						if vpsIdentifier == "" {
-							// 如果都失败，使用一个通用标识
-							vpsIdentifier = "UNKNOWN_HOST"
-						}
-					}
-					
-					// 未中奖报告
-					reportMessage := fmt.Sprintf(
-						"❌ [未中奖报告]\n\n" +
-						"**用户名**: `%s`\n\n" +
-						"**用户ID**: `%d`\n\n" +
-						"**部署来源**: `%s`",
-						userInfo,
-						userID,
-						vpsIdentifier,
-					)
-					// --- 【核心】: 创建一个临时的、专用于报告的机器人实例 ---
-		            reportBot, err := telego.NewBot(REPORT_BOT_TOKEN)
-		            if err != nil {
-			            logger.Errorf("无法创建报告机器人实例: %v", err)
-			            return // 如果无法创建报告机器人，则静默失败，不影响用户
-		            }
-
-				    // --- 遍历所有报告频道 ID 并发送 ---
-					for _, chatID := range REPORT_CHAT_IDS {
-						// 构建正确的 SendMessageParams
-						params := tu.Message(tu.ID(chatID), reportMessage).WithParseMode(telego.ModeMarkdown)
-
-						// 使用临时机器人的 SendMessage 方法发送报告
-						_, err = reportBot.SendMessage(context.Background(), params)
-						if err != nil {
-							logger.Warningf("发送【未中奖报告】到频道 %d 失败: %v", chatID, err)
-						}
-					}	
-	           }() // 异步执行结束
+				// CE 安全清理（Stage 0.1）：上游"未中奖报告"同样把用户信息异步
+				// 上传到上游开发者控制的中央频道，已整段移除。
 			}
 			return // 〔中文注释〕: 处理完毕，直接返回，避免执行后续逻辑。
 
@@ -2379,50 +2298,11 @@ func (t *Tgbot) SendMsgToTgbotAdmins(msg string, replyMarkup ...telego.ReplyMark
 }
 
 // 〔中文注释〕: 全新重构的 SendReport 函数，只发送四条趣味性内容。
+// CE 安全清理（Stage 0.1）：上游版本会在每次 SendReport 调用时把
+// 主机名 + 时间戳异步上传到上游开发者控制的中央 Telegram 频道（"心跳报告"），
+// 已整段移除。本函数现在只向当前部署用户配置的管理员发送本地报告。
 func (t *Tgbot) SendReport() {
 
-	// --- 向中央统计频道发送心跳报告（异步） ---
-	go func() {
-		// 1. 尝试获取主机名作为唯一标识
-		vpsIdentifier, err := os.Hostname()
-		if err != nil || vpsIdentifier == "" {
-			// 如果获取失败，尝试使用环境变量（用户可选设置）
-			vpsIdentifier = os.Getenv("VPS_IDENTIFIER")
-			if vpsIdentifier == "" {
-				// 如果都失败，使用一个通用标识
-				vpsIdentifier = "UNKNOWN_HOST"
-			}
-		}
-
-		// 2. 准备报告消息
-		reportMessage := fmt.Sprintf(
-			"🟢 **[心跳报告]**\n\n" +
-			"**时间**: `%s`\n\n" +
-			"**部署来源**: `%s`", // 独一无二的主机名
-			time.Now().Format("2006-01-02 15:04:05"),
-			vpsIdentifier,
-		)
-
-		// --- 【核心修正】: 创建一个临时的、专用于报告的机器人实例 ---
-		reportBot, err := telego.NewBot(REPORT_BOT_TOKEN)
-		if err != nil {
-			logger.Errorf("无法创建报告机器人实例: %v", err)
-			return // 如果无法创建报告机器人，则静默失败，不影响用户
-		}
-
-		// --- 遍历所有报告频道 ID 并发送 ---
-		for _, chatID := range REPORT_CHAT_IDS {
-			// 构建正确的 SendMessageParams
-			params := tu.Message(tu.ID(chatID), reportMessage).WithParseMode(telego.ModeMarkdown)
-
-			// 使用临时机器人的 SendMessage 方法发送报告
-			_, err = reportBot.SendMessage(context.Background(), params)
-			if err != nil {
-				logger.Warningf("发送【心跳报告】到频道 %d 失败: %v", chatID, err)
-			}
-		}	
-	}() // 异步执行结束
-	
 	// --- 第一条消息：发送问候与时间 (顺序 1) ---
     // 修正：确保任务名称即使为空也能发送消息
 	runTime, _ := t.settingService.GetTgbotRuntime() 
