@@ -1019,12 +1019,17 @@ ssl_cert_issue_standalone_embedded() {
     fi
 }
 
+# SSL 证书管理主菜单
+# CE 路线图承载点（详见 docs/ROADMAP.md §3.1）：
+#   - 选项 4 (自定义证书路径)        -> 路线图 #22 ✓
+#   - 选项 5 (备用方式申请证书)      -> 路线图 #21 ✓ (调用 ssl_cert_issue_standalone_embedded)
+# 上游 X-Panel 已实现这两项，CE 在 Stage 2.2.E 完成代码核对，未做行为变更。
 ssl_cert_issue_main() { 
     echo -e "${green}\t1.${plain} 获取 SSL 证书" 
     echo -e "${green}\t2.${plain} 撤销证书" 
     echo -e "${green}\t3.${plain} 强制更新证书" 
-    echo -e "${green}\t4.${plain} 自定义证书路径" 
-    echo -e "${green}\t5.${plain} 备用方式申请证书" 
+    echo -e "${green}\t4.${plain} 自定义证书路径   ${yellow}(CE 路线图 #22)${plain}" 
+    echo -e "${green}\t5.${plain} 备用方式申请证书 ${yellow}(CE 路线图 #21, standalone 模式)${plain}" 
     echo -e "${green}\t6.${plain} 显示现有域名" 
     echo -e "${green}\t7.${plain} 为面板设置证书路径" 
     echo -e "${green}\t0.${plain} 返回主菜单"
