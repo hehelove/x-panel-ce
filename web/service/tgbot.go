@@ -572,7 +572,7 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 	case "oneclick":
 		onlyMessage = true
 		if isAdmin {
-			t.SendMsgToTgbot(chatId, "〔一键配置〕功能现已升级为“付费Pro版”专属功能，\n\n请联系面板管理员〔购买授权码〕之后才能继续使用，\n\n----->>> “授权码购买”机器人：@Buy_ShouQuan_Bot")
+			t.SendMsgToTgbot(chatId, "〔一键配置〕功能在 x-panel-ce 中正在进行开源化重写，\n\n当前 CE 路线图阶段尚未上线该功能，敬请关注：\n\nhttps://github.com/hehelove/x-panel-ce")
 		} else {
 			handleUnknownCommand()
 		}
@@ -1872,8 +1872,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				            "**防伪码 (Hash)**: `" + validationHash + "`\n\n" +
 							"**兑奖说明**：请截图此完整消息，\n\n" +
 							"并联系交流群内管理员进行兑奖。\n\n" +
-							"------------->>>>〔X-Panel 面板〕交流群：\n\n" +
-							"------------->>>> https://t.me/XUI_CN"
+							"------------->>>>〔x-panel-ce〕项目仓库：\n\n" +
+							"------------->>>> https://github.com/hehelove/x-panel-ce/issues"
 
 			// --- 【向中央统计频道发送报告（异步）】 ---
 			go func() {
@@ -1990,7 +1990,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	 case "oneclick_options":
 		 t.deleteMessageTgBot(chatId, callbackQuery.Message.GetMessageID())
 		 t.sendCallbackAnswerTgBot(callbackQuery.ID, "功能升级提示......")
-		 t.SendMsgToTgbot(chatId, "〔一键配置〕功能现已升级为“付费Pro版”专属功能，\n\n请联系面板管理员〔购买授权码〕之后才能继续使用，\n\n----->>> “授权码购买”机器人：@Buy_ShouQuan_Bot")
+		 t.SendMsgToTgbot(chatId, "〔一键配置〕功能在 x-panel-ce 中正在进行开源化重写，\n\n当前 CE 路线图阶段尚未上线该功能，敬请关注：\n\nhttps://github.com/hehelove/x-panel-ce")
 
 	 case "subconverter_install":
 		 t.deleteMessageTgBot(chatId, callbackQuery.Message.GetMessageID())
