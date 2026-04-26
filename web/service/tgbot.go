@@ -269,6 +269,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 			{Command: "selfcheck", Description: "🛡️ 部署自检报告（仅本机统计，不外发）"},
 			{Command: "webssh", Description: "🛰️ webssh 服务状态/启停（安装请用 SSH 内 x-ui 菜单 26）"},
 			{Command: "getlinks", Description: "🔗 列出本机入站节点摘要（CE 路线图 #19 第一阶段）"},
+			{Command: "reportpref", Description: "🛠️ 每日报告内容开关（greeting/verse/image/news/lottery）"},
 		},
 	})
 	if err != nil {
@@ -698,6 +699,19 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 		onlyMessage = true
 		if isAdmin {
 			t.sendInboundLinkSummary(chatId)
+		} else {
+			handleUnknownCommand()
+		}
+
+	// CE 路线图 #16：每日报告内容开关。
+	//   /reportpref                  - 显示当前偏好
+	//   /reportpref enable <name>    - 启用某项 (greeting/verse/image/news/lottery)
+	//   /reportpref disable <name>   - 禁用某项
+	//   /reportpref reset            - 全部恢复默认（启用所有）
+	case "reportpref":
+		onlyMessage = true
+		if isAdmin {
+			t.handleReportPrefCommand(chatId, commandArgs)
 		} else {
 			handleUnknownCommand()
 		}
@@ -2471,53 +2485,160 @@ func (t *Tgbot) checkCEUpdate(chatId int64) {
 	t.SendMsgToTgbot(chatId, msg)
 }
 
+// CE 路线图 #16：每日报告 5 段内容的开关偏好（持久化于 setting 表 ceReportPrefs key）。
+// 通过 /reportpref 命令在 TG 内动态启停，无需改 cron / 重启 panel。
+type ceReportPrefs struct {
+	Greeting bool `json:"greeting"`
+	Verse    bool `json:"verse"`
+	Image    bool `json:"image"`
+	News     bool `json:"news"`
+	Lottery  bool `json:"lottery"`
+}
+
+func defaultCEReportPrefs() ceReportPrefs {
+	return ceReportPrefs{Greeting: true, Verse: true, Image: true, News: true, Lottery: true}
+}
+
+func (t *Tgbot) loadCEReportPrefs() ceReportPrefs {
+	raw, err := t.settingService.GetCEReportPrefs()
+	if err != nil || strings.TrimSpace(raw) == "" {
+		return defaultCEReportPrefs()
+	}
+	var p ceReportPrefs
+	if err := json.Unmarshal([]byte(raw), &p); err != nil {
+		logger.Warningf("ceReportPrefs JSON 解析失败，回退默认: %v", err)
+		return defaultCEReportPrefs()
+	}
+	return p
+}
+
+func (t *Tgbot) saveCEReportPrefs(p ceReportPrefs) error {
+	bs, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+	return t.settingService.SetCEReportPrefs(string(bs))
+}
+
+func (p ceReportPrefs) summary() string {
+	mark := func(b bool) string {
+		if b {
+			return "🟢 启用"
+		}
+		return "⚪ 禁用"
+	}
+	return fmt.Sprintf(
+		"🛠️ 每日报告偏好（CE 路线图 #16）\n\n"+
+			"  - greeting (问候+时间)  : %s\n"+
+			"  - verse    (每日一语)   : %s\n"+
+			"  - image    (今日美图)   : %s\n"+
+			"  - news     (新闻简报)   : %s\n"+
+			"  - lottery  (抽奖邀请)   : %s\n\n"+
+			"用法：\n"+
+			"  /reportpref                       查看当前偏好\n"+
+			"  /reportpref enable  <name>        启用某项\n"+
+			"  /reportpref disable <name>        禁用某项\n"+
+			"  /reportpref reset                 全部恢复默认（启用所有）",
+		mark(p.Greeting), mark(p.Verse), mark(p.Image), mark(p.News), mark(p.Lottery),
+	)
+}
+
+func (t *Tgbot) handleReportPrefCommand(chatId int64, args []string) {
+	current := t.loadCEReportPrefs()
+	if len(args) == 0 {
+		t.SendMsgToTgbot(chatId, current.summary())
+		return
+	}
+
+	switch args[0] {
+	case "reset":
+		newPrefs := defaultCEReportPrefs()
+		if err := t.saveCEReportPrefs(newPrefs); err != nil {
+			t.SendMsgToTgbot(chatId, "❌ 重置失败："+err.Error())
+			return
+		}
+		t.SendMsgToTgbot(chatId, "✅ 已重置为默认（全部启用）。\n\n"+newPrefs.summary())
+	case "enable", "disable":
+		if len(args) < 2 {
+			t.SendMsgToTgbot(chatId, "❌ 缺少子项名称。可选: greeting / verse / image / news / lottery")
+			return
+		}
+		setVal := args[0] == "enable"
+		target := strings.ToLower(args[1])
+		switch target {
+		case "greeting":
+			current.Greeting = setVal
+		case "verse":
+			current.Verse = setVal
+		case "image":
+			current.Image = setVal
+		case "news":
+			current.News = setVal
+		case "lottery":
+			current.Lottery = setVal
+		default:
+			t.SendMsgToTgbot(chatId, "❌ 未知子项: `"+target+"`\n可选: greeting / verse / image / news / lottery")
+			return
+		}
+		if err := t.saveCEReportPrefs(current); err != nil {
+			t.SendMsgToTgbot(chatId, "❌ 保存失败："+err.Error())
+			return
+		}
+		t.SendMsgToTgbot(chatId, "✅ 偏好已更新。\n\n"+current.summary())
+	default:
+		t.SendMsgToTgbot(chatId, "❌ 未知子命令: `"+args[0]+"`\n可用: enable / disable / reset；不带参数时查看当前偏好。")
+	}
+}
+
 // 〔中文注释〕: 全新重构的 SendReport 函数，只发送四条趣味性内容。
 // CE 安全清理（Stage 0.1）：上游版本会在每次 SendReport 调用时把
 // 主机名 + 时间戳异步上传到上游开发者控制的中央 Telegram 频道（"心跳报告"），
 // 已整段移除。本函数现在只向当前部署用户配置的管理员发送本地报告。
+// CE 路线图 #16：每段内容根据 ceReportPrefs（持久化于 setting 表）动态启停。
 func (t *Tgbot) SendReport() {
+	prefs := t.loadCEReportPrefs()
 
-	// --- 第一条消息：发送问候与时间 (顺序 1) ---
-    // 修正：确保任务名称即使为空也能发送消息
-	runTime, _ := t.settingService.GetTgbotRuntime() 
-    taskName := runTime
-    if taskName == "" {
-        taskName = "未配置任务名称" // 使用占位符，避免因空值跳过
-    }
-
-	greetingMsg := fmt.Sprintf(
-		"☀️ **每日定时报告** (任务: `%s`)\n\n*  美好的一天，从〔X-Panel 面板〕开始！*\n\n⏰ **当前时间**：`%s`",
-		taskName,
-		time.Now().Format("2006-01-02 15:04:05"),
-	)
-	t.SendMsgToTgbotAdmins(greetingMsg) 
-	time.Sleep(1000 * time.Millisecond)
-
-	// --- 第二条消息：每日一语（最终稳定版） (顺序 2) ---
-	if verse, err := t.getDailyVerse(); err == nil {
-		t.SendMsgToTgbotAdmins(verse)
-	} else {
-		// 即使失败，也记录日志，不影响后续发送
-		logger.Warningf("获取每日诗词失败: %v", err)
+	if prefs.Greeting {
+		runTime, _ := t.settingService.GetTgbotRuntime()
+		taskName := runTime
+		if taskName == "" {
+			taskName = "未配置任务名称"
+		}
+		greetingMsg := fmt.Sprintf(
+			"☀️ **每日定时报告** (任务: `%s`)\n\n*  美好的一天，从〔x-panel-ce 面板〕开始！*\n\n⏰ **当前时间**：`%s`",
+			taskName,
+			time.Now().Format("2006-01-02 15:04:05"),
+		)
+		t.SendMsgToTgbotAdmins(greetingMsg)
+		time.Sleep(1000 * time.Millisecond)
 	}
-	time.Sleep(1000 * time.Millisecond)
 
-	// --- 第三条消息：今日美图（三重冗余，已修复） (顺序 3) ---
-	t.sendRandomImageWithFallback()
-	time.Sleep(1000 * time.Millisecond)
-
-	// --- 第四条消息：新闻资讯简报（最终稳定版：中文 IT/AI/币圈） (顺序 4) ---
-	if news, err := t.getNewsBriefingWithFallback(); err == nil {
-		t.SendMsgToTgbotAdmins(news)
-	} else {
-		// 即使失败，也记录日志，不影响发送流程结束
-		logger.Warningf("获取所有新闻资讯失败: %v", err)
+	if prefs.Verse {
+		if verse, err := t.getDailyVerse(); err == nil {
+			t.SendMsgToTgbotAdmins(verse)
+		} else {
+			logger.Warningf("获取每日诗词失败: %v", err)
+		}
+		time.Sleep(1000 * time.Millisecond)
 	}
-	// 〔中文注释〕: 【新增】为下一条消息添加延时
-	time.Sleep(1000 * time.Millisecond)
 
-	// --- 【新增】第五条消息：发送抽奖游戏邀请 (顺序 5) ---
-	t.sendLotteryGameInvitation()
+	if prefs.Image {
+		t.sendRandomImageWithFallback()
+		time.Sleep(1000 * time.Millisecond)
+	}
+
+	if prefs.News {
+		if news, err := t.getNewsBriefingWithFallback(); err == nil {
+			t.SendMsgToTgbotAdmins(news)
+		} else {
+			logger.Warningf("获取所有新闻资讯失败: %v", err)
+		}
+		time.Sleep(1000 * time.Millisecond)
+	}
+
+	if prefs.Lottery {
+		t.sendLotteryGameInvitation()
+	}
 }
 
 // 〔中文注释〕: 新增函数，执行抽奖逻辑并返回结果。

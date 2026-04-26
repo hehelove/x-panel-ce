@@ -302,6 +302,17 @@ func (s *SettingService) SetTgbotRuntime(time string) error {
 	return s.setString("tgRunTime", time)
 }
 
+// CE 路线图 #16：每日报告偏好（5 段开关 JSON）持久化于 setting 表。
+// 用 key-value 存储，避免新建 schema migration；
+// 默认值（全部启用）由调用方在解析失败时回退。
+func (s *SettingService) GetCEReportPrefs() (string, error) {
+	return s.getString("ceReportPrefs")
+}
+
+func (s *SettingService) SetCEReportPrefs(value string) error {
+	return s.setString("ceReportPrefs", value)
+}
+
 func (s *SettingService) GetTgBotBackup() (bool, error) {
 	return s.getBool("tgBotBackup")
 }
