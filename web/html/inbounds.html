@@ -710,22 +710,26 @@
       :footer="null"
    >
       <a-alert
-      message="功能升级提示"
+      message="功能开发中"
       type="info"
       show-icon
 >
     <template #description>
-        〔一键配置〕功能现已升级为“付费Pro版”专属功能，
+        〔一键配置 / 批量部署〕功能在 x-panel-ce 路线图（#13 / #31）中归属 Stage 4，
         <br />
+        将以纯本地事务式 VLESS+TCP+Reality+Vision 入站生成的方式开源重写，
         <br />
-        请联系面板管理员〔购买授权码〕之后才能继续使用。
+        目前后端 API 尚未实现。
     </template>
-    
-    <template #icon><a-icon type="crown"></a-icon></template>
+
+    <template #icon><a-icon type="experiment"></a-icon></template>
      </a-alert>
         <div :style="{ marginTop: '20px', textAlign: 'center' }">
           <p>
-             <a href="https://github.com/hehelove/x-panel-ce" target="_blank">x-panel-ce 项目仓库（功能正在开源化重写）</a>
+             <a href="https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md" target="_blank">x-panel-ce 路线图（docs/ROADMAP.md）</a>
+          </p>
+          <p>
+             <a href="https://github.com/hehelove/x-panel-ce/issues" target="_blank">在 Issues 跟踪进度或贡献代码</a>
           </p>
        </div>
      </a-modal>

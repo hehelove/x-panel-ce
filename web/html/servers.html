@@ -172,7 +172,7 @@
         </a-form>
 
         <div v-if="formType === 0" style="margin-top: 20px; color: red; font-style: italic; text-align: center; line-height: 1.6;">
-            1、此功能用于集中管理多个〔X-Panel 面板〕，<br>
+            1、此功能用于集中管理多个〔x-panel-ce〕面板，<br>
             2、是通过在后台〔配置绑定机器人〕去管理的，<br>
             3、若在输入框您已经添加了〔被控端 的 VPS 信息〕，<br>
             4、则您不能在对应的那台 VPS 中去绑定任何其他机器人，<br>
@@ -429,63 +429,42 @@
                 this.visible = true;
             },
 
-            // 提交添加请求
+            // CE 路线图 #18/#20：上游"多面板管理 + 一键部署中转节点"在免费版中
+            // 弹出"付费 Pro 专属"并引导购买授权码。CE 已切断购买引导，并在
+            // ROADMAP 中将这两项纳入 Stage 5（高风险，跨机操作）。当前后端
+            // 尚未提供主从协议实现，前端给出"功能开发中"中性提示。
             async submitServer() {
-                
-                // 1. 先关闭刚才填写的模态框，
                 this.visible = false;
-
-                // 2. 使用 Vue 的 createElement 函数构建支持 HTML 的提示内容
                 const h = this.$createElement;
-                
-                // 3. 弹出警告提示框
-                this.$warning({
-                    title: '功能受限提示',
-                    okText: '知道了',
-                    // 【核心修改点 1】：调整弹窗宽度，使其足够容纳一行文字
-                    width: 580, 
-                    // 这里定义提示框的具体内容和样式
-                    content: h('div', { style: 'margin-top: 10px; font-size: 15px; line-height: 1.6;' }, [ // 增加行高，提升阅读体验
-                        
-                        // 第一段：设置底部外边距，模拟空行
-                        h('p', { style: 'margin-bottom: 15px;' }, '此项功能是“付费Pro版”专属功能，免费版不能用，'), 
-                        
-                        // 第二段：设置底部外边距，模拟空行
-                        h('p', { style: 'margin-bottom: 15px;' }, '请联系面板管理员〔购买授权码〕之后才能继续使用。'), 
-                        
-                        // 第三段：TG 链接（无需底部外边距）
-                        h('p', { style: 'color: #ff4d4f; font-weight: bold; margin-bottom: 0;' }, [
-                            '----->>> “授权码购买”机器人：',
-                            h('a', { 
-                                // 设置跳转链接到 Telegram
-                                attrs: { 
-                                    href: 'https://github.com/hehelove/x-panel-ce', 
-                                    target: '_blank' // 在新标签页打开
-                                }, 
-                                style: { 
-                                    color: '#1890ff', // 链接颜色
-                                    fontWeight: 'bold',
-                                    textDecoration: 'underline' // 链接下划线
-                                } 
-                            }, 'hehelove/x-panel-ce')
+                this.$info({
+                    title: '功能开发中',
+                    okText: '我知道了',
+                    width: 560,
+                    content: h('div', { style: 'margin-top: 10px; font-size: 15px; line-height: 1.7;' }, [
+                        h('p', { style: 'margin-bottom: 12px;' },
+                            '"多面板管理 / 中转节点一键部署" 在 x-panel-ce 路线图（#18 / #20）中归属 Stage 5，目前主从协议尚未在 CE 中实现。'),
+                        h('p', { style: 'margin-bottom: 12px;' },
+                            '欢迎在 GitHub Issues 跟踪进度或贡献 Pull Request。'),
+                        h('p', { style: 'color: #1890ff; margin-bottom: 0;' }, [
+                            '路线图详情：',
+                            h('a', {
+                                attrs: { href: 'https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md', target: '_blank' },
+                                style: { color: '#1890ff', textDecoration: 'underline', fontWeight: 'bold' },
+                            }, 'docs/ROADMAP.md'),
                         ]),
                     ]),
-                    onOk() {}
+                    onOk() {},
                 });
             },
 
-            // 删除服务器
             deleteServer(record) {
-                // 【免费版修改】：拦截删除操作
-                this.$message.warning("〔免费基础版〕不支持此操作");
-                return; 
+                this.$message.info("此功能在 Stage 5（路线图 #18）中重写，目前尚未实现。");
+                return;
             },
 
-             // 【拦截方法】：拦截【检测中转节点】操作
             openCheckModal() {
-                // 【免费版修改】：拦截【检测中转节点】操作
-                this.$message.warning("〔免费基础版〕不支持此操作");
-                return; 
+                this.$message.info("此功能在 Stage 5（路线图 #20）中重写，目前尚未实现。");
+                return;
             },
 			copyLink() {
                 if(!this.resultLink) return;
