@@ -1,4 +1,4 @@
-name: Release X-Panel
+name: Release x-panel-ce
 
 on:
   workflow_dispatch:

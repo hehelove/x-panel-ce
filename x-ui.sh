@@ -38,7 +38,7 @@ echo -e "——————————————————————"
 echo -e "当前服务器的操作系统为:${red} $release${plain}"
 echo ""
 xui_version=$(/usr/local/x-ui/x-ui -v)
-last_version=$(curl -Ls "https://api.github.com/repos/xeefei/x-panel/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+last_version=$(curl -Ls "https://api.github.com/repos/hehelove/x-panel-ce/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 echo -e "${green}当前代理面板的版本为: ${red}〔X-Panel面板〕v${xui_version}${plain}"
 echo ""
 echo -e "${yellow}〔X-Panel面板〕最新版为---------->>> ${last_version}${plain}"
@@ -143,7 +143,7 @@ before_show_menu() {
 }
 
 install() {
-    bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/main/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/main/install.sh)
     if [[ $? == 0 ]]; then
         if [[ $# == 0 ]]; then
             start
@@ -162,7 +162,7 @@ update() {
         fi
         return 0
     fi
-    bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/main/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/main/install.sh)
     if [[ $? == 0 ]]; then
         LOGI "更新完成，面板已自动重启"
         exit 0
@@ -180,7 +180,7 @@ update_menu() {
         return 0
     fi
     
-    wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/xeefei/x-panel/main/x-ui.sh
+    wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/hehelove/x-panel-ce/main/x-ui.sh
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
     
@@ -202,7 +202,7 @@ custom_version() {
         exit 1
     fi
 
-    download_link="https://raw.githubusercontent.com/xeefei/x-panel/master/install.sh"
+    download_link="https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh"
 
     # Use the entered panel version in the download link
     install_command="bash <(curl -Ls $download_link) v$panel_version"
@@ -236,7 +236,7 @@ uninstall() {
     echo ""
     echo -e "卸载成功\n"
     echo "如果您需要再次安装此面板，可以使用以下命令:"
-    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/xeefei/x-panel/master/install.sh)${plain}"
+    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/hehelove/x-panel-ce/master/install.sh)${plain}"
     echo ""
     # Trap the SIGTERM signal
     trap delete_script SIGTERM
@@ -559,7 +559,7 @@ enable_bbr() {
 }
 
 update_shell() {
-    wget -O /usr/bin/x-ui -N --no-check-certificate https://github.com/xeefei/x-panel/raw/main/x-ui.sh
+    wget -O /usr/bin/x-ui -N --no-check-certificate https://github.com/hehelove/x-panel-ce/raw/main/x-ui.sh
     if [[ $? != 0 ]]; then
         echo ""
         LOGE "下载脚本失败，请检查机器是否可以连接至 GitHub"
@@ -1608,8 +1608,15 @@ else
 fi
 
 # --------- 安装/部署sublink服务 ----------
+# x-panel-ce 注：上游引用的 xeefei/sublink 仅在私有 Pro 版中维护。
+# 本 fork 暂不在此处自动调用第三方安装脚本；订阅转换功能将由 CE 独立模块在路线图中开源化重写。
 
-bash <(curl -Ls https://raw.githubusercontent.com/xeefei/sublink/main/install.sh)
+echo -e "${yellow}[CE] 订阅转换器（sublink）的自动安装已在 x-panel-ce 中移除：${plain}"
+echo -e "${yellow}    不再引用上游 xeefei/sublink 项目。${plain}"
+echo -e "${green}    后续将在本仓库以独立模块的形式重新提供，敬请关注 NOTICE.md / 路线图。${plain}"
+exit 0
+# --- 以下旧逻辑保留作为参考，已不再执行 ---
+# bash <(curl -Ls https://raw.githubusercontent.com/xeefei/sublink/main/install.sh)
 
 
 # --------- 安装 Nginx ----------
@@ -2090,35 +2097,11 @@ show_menu() {
   ${green}25.${plain} 安装订阅转换 
 ——————————————————————
   ${green}若在使用过程中有任何问题${plain}
-  ${yellow}请加入〔X-Panel面板〕交流群${plain}
-  ${red}https://t.me/XUI_CN ${yellow}截图进行反馈${plain}
-  ${green}〔X-Panel面板〕项目地址${plain}
-  ${yellow}https://github.com/xeefei/x-panel${plain}
-  ${green}详细〔安装配置〕教程${plain}
-  ${yellow}https://xeefei.blogspot.com/2025/09/x-panel.html${plain}
+  ${yellow}请到本项目仓库提 Issue：${plain}
+  ${green}〔x-panel-ce〕项目地址${plain}
+  ${yellow}https://github.com/hehelove/x-panel-ce${plain}
+  ${green}许可证：${plain}${yellow}GPL-3.0${plain}
 ——————————————————————
-
--------------->>>>>>>赞 助 推 广 区<<<<<<<<-------------------
-
-${green}1、搬瓦工GIA高端线路：${yellow}https://bandwagonhost.com/aff.php?aff=75015${plain}
-
-${green}2、Dmit高端GIA线路：${yellow}https://www.dmit.io/aff.php?aff=9326${plain}
-
-${green}3、Gomami亚太顶尖优化线路：${yellow}https://gomami.io/aff.php?aff=174${plain}
-
-${green}4、ISIF优质亚太优化线路：${yellow}https://cloud.isif.net/login?affiliation_code=333${plain}
-
-${green}5、ZoroCloud全球优质原生家宽&住宅双lSP，跨境首选：${yellow}https://my.zorocloud.com/aff.php?aff=1072${plain}
-
-${green}6、三网直连 IEPL / IPLC 直播流量转发：${yellow}https://idc333.top/#register/BCUZXNELNO${plain}
-
-${green}7、Bagevm优质落地鸡（原生IP全解锁）：${yellow}https://www.bagevm.com/aff.php?aff=754${plain}
-
-${green}8、白丝云〔4837线路〕实惠量大管饱：${yellow}https://cloudsilk.io/aff.php?aff=706${plain}
-
-${green}9、RackNerd极致性价比机器：${yellow}https://my.racknerd.com/aff.php?aff=15268&pid=912${plain}
-
-----------------------------------------------
 "
     show_status
     echo && read -p "请输入选项 [0-25]: " num
