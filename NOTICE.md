@@ -91,6 +91,19 @@
 - Issues / Pull Requests：<https://github.com/hehelove/x-panel-ce/issues>
 - 本项目接受任何符合 GPL-3.0 条款的开源贡献。
 
+## 7. 不发布预构建 Docker 镜像（运营决策）
+
+- ce-1.0.2 起，CE **不再发布预构建 Docker 镜像**到 `ghcr.io`。
+- 原因：5 平台 QEMU 多架构 build 在 GitHub Actions 公共 runner 上耗时
+  30-60 分钟/次、缓存命中率低、外部依赖 (`Loyalsoldier/v2ray-rules-dat`、
+  `chocolate4u/Iran-v2ray-rules` 等) 网络抖动经常 flake，对 99% 走
+  systemd 直装的用户无实际收益。
+- 仓库保留 `Dockerfile` + `DockerInit.sh` + `DockerEntrypoint.sh`，需要
+  docker 部署的贡献者请按 README 「Docker 安装（本地构建）」章节自行
+  `docker build -t x-panel-ce:local .` 即可。
+- 已删除 `.github/workflows/docker.yml`，避免每次 release 触发空跑/失败
+  CI 浪费用户/maintainer 心智成本。
+
 ---
 
-最后更新：2026-04-26（追加 Stage 6 反遥测承诺；追加抽奖功能整套移除说明）
+最后更新：2026-04-26（追加 Stage 6 反遥测承诺；追加抽奖功能整套移除说明；追加 §7 不发布预构建 Docker 镜像决策）

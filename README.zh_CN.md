@@ -229,22 +229,23 @@ XUI_BIN_FOLDER="bin" XUI_DB_FOLDER="/etc/x-ui" go build main.go
 
 ---
 
-## Docker 安装
+## Docker 安装（本地构建）
 
 <details>
 <summary>展开</summary>
+
+> **注意**：x-panel-ce **不发布预构建 Docker 镜像**到 GHCR（QEMU 多平台 build
+> 在公共 runner 上耗时 30-60 分钟、缓存命中率低，对 99% 走 systemd 直装的
+> 用户无实际收益）。仓库保留 `Dockerfile`，需要 docker 部署的用户请自行本地
+> 构建：
 
 ```sh
 bash <(curl -sSL https://get.docker.com)
 
 git clone https://github.com/hehelove/x-panel-ce.git
 cd x-panel-ce
-docker compose up -d
-```
+docker build -t x-panel-ce:local .
 
-或不用 compose：
-
-```sh
 docker run -itd \
    -e XRAY_VMESS_AEAD_FORCED=false \
    -v $PWD/db/:/etc/x-ui/ \
@@ -252,16 +253,17 @@ docker run -itd \
    --network=host \
    --restart=unless-stopped \
    --name x-panel-ce \
-   ghcr.io/hehelove/x-panel-ce:latest
+   x-panel-ce:local
 ```
 
-升级：
+升级（重新拉代码 + 重 build）：
 
 ```sh
 cd x-panel-ce
-docker compose down
-docker compose pull
-docker compose up -d
+git pull
+docker stop x-panel-ce && docker rm x-panel-ce
+docker build -t x-panel-ce:local .
+# 然后重新执行上面的 docker run
 ```
 
 卸载容器：
