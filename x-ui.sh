@@ -2287,19 +2287,180 @@ ce_dns_region_check() {
 
 # 路线图 #29 — 内核深度调优脚本
 # 应用策略：dry-run 预览 → 备份 → 用户确认（默认 N）→ 写入独立 sysctl 文件
+# 安全约束：
+#   - 不修改 /etc/sysctl.conf；写到独立文件 /etc/sysctl.d/99-x-panel-ce-tuning.conf
+#   - 仍会备份 /etc/sysctl.conf 一份（防御性，与 ROADMAP 锁定策略一致）
+#   - 回滚 = 删除 99-x-panel-ce-tuning.conf + sysctl --system
 ce_tuning_kernel() {
-    echo ""
-    echo -e "${green}[CE] 路线图 #29 — 内核深度调优脚本${plain}"
-    echo -e "    覆盖：BBR + FQ / TCP Fast Open / 缓冲区 / 队列长度"
-    echo -e "    应用流程："
-    echo -e "      1) ${yellow}dry-run 预览${plain} 即将写入的 sysctl 项"
-    echo -e "      2) 备份 ${yellow}/etc/sysctl.conf${plain} 到 ${yellow}/etc/sysctl.conf.bak.<ts>${plain}"
-    echo -e "      3) 用户确认（${red}默认 N${plain}）后写入 ${yellow}/etc/sysctl.d/99-x-panel-ce-tuning.conf${plain}"
-    echo -e "      4) 提供回滚菜单项"
-    echo ""
-    echo -e "${yellow}    [TODO] 实现尚在 Stage 2.2.D，本菜单项目前为占位。${plain}"
-    echo -e "${green}    进度跟踪：https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md${plain}"
+    local ce_conf="/etc/sysctl.d/99-x-panel-ce-tuning.conf"
+    local sysctl_main="/etc/sysctl.conf"
+
+    while true; do
+        echo ""
+        echo -e "${green}===========================================${plain}"
+        echo -e "${green}  [CE] 内核深度调优（路线图 #29）${plain}"
+        echo -e "${green}  覆盖：BBR+FQ / TFO / 缓冲区 / 队列${plain}"
+        echo -e "${green}===========================================${plain}"
+        if [ -f "${ce_conf}" ]; then
+            echo -e "  当前状态：${green}[已应用]${plain} ${ce_conf}"
+        else
+            echo -e "  当前状态：${yellow}[未应用]${plain}"
+        fi
+        echo ""
+        echo -e "  ${green}1.${plain} dry-run 预览（仅打印，不写入任何文件）"
+        echo -e "  ${green}2.${plain} 应用调优（备份 + 二次确认 + 写入）"
+        echo -e "  ${green}3.${plain} 回滚（删除 CE 配置并 sysctl --system）"
+        echo -e "  ${green}4.${plain} 查看当前内核运行时值"
+        echo -e "  ${green}0.${plain} 返回主菜单"
+        echo -e "${green}===========================================${plain}"
+        read -p "请输入选项 [0-4]: " tuning_op
+
+        case "${tuning_op}" in
+        0)
+            break
+            ;;
+        1)
+            _ce_tuning_print_config
+            ;;
+        2)
+            _ce_tuning_apply "${ce_conf}" "${sysctl_main}"
+            ;;
+        3)
+            _ce_tuning_rollback "${ce_conf}"
+            ;;
+        4)
+            _ce_tuning_show_runtime
+            ;;
+        *)
+            LOGE "请输入正确的数字选项 [0-4]"
+            ;;
+        esac
+    done
+
     before_show_menu
+}
+
+_ce_tuning_get_config() {
+    cat <<'EOF'
+# x-panel-ce CE 路线图 #29 内核调优
+# 写入位置：/etc/sysctl.d/99-x-panel-ce-tuning.conf
+# 回滚方式：删除该文件后执行 sysctl --system
+# 详细说明：https://github.com/hehelove/x-panel-ce/blob/main/docs/ROADMAP.md
+
+# --- BBR + FQ 拥塞控制 ---
+net.core.default_qdisc=fq
+net.ipv4.tcp_congestion_control=bbr
+
+# --- TCP Fast Open（client + server 同时启用）---
+net.ipv4.tcp_fastopen=3
+
+# --- 接收/发送缓冲区（上限 64 MiB）---
+net.core.rmem_max=67108864
+net.core.wmem_max=67108864
+net.ipv4.tcp_rmem=4096 87380 67108864
+net.ipv4.tcp_wmem=4096 16384 67108864
+
+# --- 队列与 backlog ---
+net.core.netdev_max_backlog=8192
+net.core.somaxconn=8192
+
+# --- TIME_WAIT 复用 + FIN 超时 ---
+net.ipv4.tcp_tw_reuse=1
+net.ipv4.tcp_fin_timeout=15
+
+# --- 本地端口范围 ---
+net.ipv4.ip_local_port_range=1024 65535
+EOF
+}
+
+_ce_tuning_print_config() {
+    echo ""
+    echo -e "${green}[dry-run] 即将写入的 sysctl 项：${plain}"
+    echo "----------------------------------------------------------"
+    _ce_tuning_get_config | sed 's/^/  /'
+    echo "----------------------------------------------------------"
+    echo -e "${yellow}[CE] 这只是预览，未做任何写入。${plain}"
+}
+
+_ce_tuning_apply() {
+    local ce_conf="$1" sysctl_main="$2"
+
+    # 预检：BBR 模块
+    if ! grep -qE "^tcp_bbr" /proc/modules 2>/dev/null; then
+        if ! modprobe tcp_bbr 2>/dev/null; then
+            echo -e "${yellow}[CE] 警告：内核可能不支持 tcp_bbr（需 4.9+），继续仍可写入${plain}"
+            echo -e "${yellow}     但 sysctl --system 可能在 tcp_congestion_control=bbr 一行报错${plain}"
+        fi
+    fi
+
+    echo ""
+    echo -e "${green}=== 即将应用的 sysctl 内容 ===${plain}"
+    _ce_tuning_get_config | sed 's/^/  /'
+    echo -e "${green}===============================${plain}"
+    echo ""
+    local confirm
+    read -p "$(echo -e "${yellow}确认应用？[y/N] ${plain}")" confirm
+    if [[ ! "${confirm}" =~ ^[Yy]$ ]]; then
+        echo -e "${yellow}[CE] 已取消，未做任何写入。${plain}"
+        return
+    fi
+
+    # 防御性备份 /etc/sysctl.conf（即使我们不直接改它）
+    if [ -f "${sysctl_main}" ]; then
+        local ts bak
+        ts=$(date +%Y%m%d_%H%M%S)
+        bak="${sysctl_main}.bak.${ts}"
+        cp -p "${sysctl_main}" "${bak}"
+        echo -e "${green}[CE] 已备份 ${sysctl_main} -> ${bak}${plain}"
+    fi
+
+    _ce_tuning_get_config >"${ce_conf}"
+    chmod 0644 "${ce_conf}"
+    echo -e "${green}[CE] 已写入 ${ce_conf}${plain}"
+
+    if sysctl --system >/dev/null 2>&1; then
+        echo -e "${green}[CE] sysctl --system 重载完成，调优生效${plain}"
+    else
+        echo -e "${yellow}[CE] sysctl --system 报错；请运行 'sysctl --system' 看具体哪一行不被支持${plain}"
+    fi
+}
+
+_ce_tuning_rollback() {
+    local ce_conf="$1"
+    if [ ! -f "${ce_conf}" ]; then
+        echo -e "${yellow}[CE] ${ce_conf} 不存在，无需回滚${plain}"
+        return
+    fi
+    rm -f "${ce_conf}"
+    if sysctl --system >/dev/null 2>&1; then
+        echo -e "${green}[CE] 已回滚（删除 ${ce_conf} 并 sysctl --system）${plain}"
+        echo -e "${yellow}    注：已生效的运行时值需要重启或显式 sysctl -w 才能完全恢复内核默认${plain}"
+    else
+        echo -e "${yellow}[CE] sysctl --system 报错${plain}"
+    fi
+}
+
+_ce_tuning_show_runtime() {
+    echo ""
+    echo -e "${green}[CE] 当前内核运行时值（CE 调优相关 key）：${plain}"
+    local k v
+    for k in \
+        net.core.default_qdisc \
+        net.ipv4.tcp_congestion_control \
+        net.ipv4.tcp_fastopen \
+        net.core.rmem_max \
+        net.core.wmem_max \
+        net.ipv4.tcp_rmem \
+        net.ipv4.tcp_wmem \
+        net.core.netdev_max_backlog \
+        net.core.somaxconn \
+        net.ipv4.tcp_tw_reuse \
+        net.ipv4.tcp_fin_timeout \
+        net.ipv4.ip_local_port_range
+    do
+        v=$(sysctl -n "${k}" 2>/dev/null || echo "<not set>")
+        printf "  %-40s = %s\n" "${k}" "${v}"
+    done
 }
 
 show_usage() {
