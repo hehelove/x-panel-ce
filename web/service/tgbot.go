@@ -101,6 +101,44 @@ var LOTTERY_STICKER_IDS = [3]string{
 // 整段移除（含本常量与下方 SendReport / 抽奖回调里的三处异步 goroutine）。
 // 详见 NOTICE.md 第 4 节。
 
+// CE 路线图 #25：当前已 Start 的 Tgbot 实例的 package 级别引用。
+// 仅在同 package（service）内被读，由 Tgbot.Start / Tgbot.Stop 负责生命周期；
+// 外部 service（如 InboundService）通过包级 helper（见 NotifyInboundEnableChange）访问，
+// nil-safe，绝不直接暴露给其他 package。
+var ceCurrentTgbot *Tgbot
+
+// CE 路线图 #25：入站启用/禁用 TG 通知钩子（包级 helper，供同 package 的
+// InboundService 调用）。设计要点：
+//   1. nil-safe + IsRunning 双重保护；TG 未启用或未运行时静默跳过；
+//   2. 仅在 oldEnable != newEnable 时发送，避免重复通知；
+//   3. 异步 goroutine 发送，避免阻塞数据库事务路径。
+func NotifyInboundEnableChange(inboundId int, remark string, port int, oldEnable, newEnable bool) {
+	bot := ceCurrentTgbot
+	if bot == nil || !bot.IsRunning() {
+		return
+	}
+	if oldEnable == newEnable {
+		return
+	}
+	icon := "🔴"
+	state := "下线 (disabled)"
+	if newEnable {
+		icon = "🟢"
+		state = "上线 (enabled)"
+	}
+	msg := fmt.Sprintf(
+		"%s 入站节点状态变化\n\n"+
+			"  - ID: %d\n"+
+			"  - 备注: %s\n"+
+			"  - 端口: %d\n"+
+			"  - 状态: %s\n"+
+			"  - 时间: %s",
+		icon, inboundId, remark, port, state,
+		time.Now().Format("2006-01-02 15:04:05"),
+	)
+	go bot.SendMsgToTgbotAdmins(msg)
+}
+
 type LoginStatus byte
 
 const (
@@ -244,6 +282,10 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 		isRunning = true
 	}
 
+	// CE 路线图 #25：注册全局 Tgbot 实例，供同 package 的 InboundService
+	// 在入站 enable/disable 状态翻转时回调通知钩子。
+	ceCurrentTgbot = t
+
 	return nil
 }
 
@@ -304,6 +346,9 @@ func (t *Tgbot) Stop() {
 	logger.Info("Stop Telegram receiver ...")
 	isRunning = false
 	adminIds = nil
+
+	// CE 路线图 #25：清空全局 Tgbot 引用，避免 InboundService 钩子在 bot 关闭后仍触发。
+	ceCurrentTgbot = nil
 }
 
 func (t *Tgbot) encodeQuery(query string) string {

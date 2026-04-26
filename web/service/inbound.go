@@ -458,6 +458,10 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 		}
 	}
 
+	// CE 路线图 #25：在覆盖 oldInbound.Enable 之前记录原值，
+	// 用于事务成功提交后触发"入站上下线"TG 通知钩子。
+	oldEnableForHook := oldInbound.Enable
+
 	oldInbound.Up = inbound.Up
 	oldInbound.Down = inbound.Down
 	oldInbound.Total = inbound.Total
@@ -500,7 +504,14 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	}
 	s.xrayApi.Close()
 
-	return inbound, needRestart, tx.Save(oldInbound).Error
+	saveErr := tx.Save(oldInbound).Error
+	// CE 路线图 #25：仅在事务保存成功后再触发 TG 通知，
+	// 避免事务回滚导致误报"入站状态变化"。NotifyInboundEnableChange
+	// 内部 nil-safe，会在 TG bot 未运行时静默跳过。
+	if saveErr == nil {
+		NotifyInboundEnableChange(oldInbound.Id, oldInbound.Remark, oldInbound.Port, oldEnableForHook, oldInbound.Enable)
+	}
+	return inbound, needRestart, saveErr
 }
 
 func (s *InboundService) updateClientTraffics(tx *gorm.DB, oldInbound *model.Inbound, newInbound *model.Inbound) error {
